@@ -1,0 +1,2 @@
+Cosas por implementar
+1. Id de siguiente y anterior, algunos temas si los requieren. 
