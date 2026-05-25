@@ -43,13 +43,13 @@ if df is not None:
         resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
         
         # Título Principal del Estudio
-        st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allowed_index=True)
+        st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
         # 3. Renderizado con la lógica de tu Colab
         for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
             subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
-            st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allowed_index=True)
+            st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
             
             # Separar versos con idea y sin idea
             con_idea = grupo_subtema[grupo_subtema['Ideas'].notna() & (grupo_subtema['Ideas'].astype(str).str.strip() != "")]
@@ -61,7 +61,7 @@ if df is not None:
                 idea_fila = str(fila['Ideas']).strip()
                 if idea_fila != idea_actual:
                     idea_actual = idea_fila
-                    st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allowed_index=True)
+                    st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                 texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
@@ -70,12 +70,12 @@ if df is not None:
                     <div class="verso-contenedor-idea">
                         <span class="cita">📖 {cita}</span> — {texto_verso}
                     </div>
-                """, unsafe_allowed_index=True)
+                """, unsafe_allow_html=True)
                 
             # Bloque 2: Versículos adicionales del subtema
             if not sin_idea.empty:
                 if not con_idea.empty:
-                    st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allowed_index=True)
+                    st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
                 
                 for _, fila in sin_idea.iterrows():
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
