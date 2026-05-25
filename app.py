@@ -15,7 +15,7 @@ st.markdown("""
     .cita { font-weight: bold; color: #2563EB; }
     .leyenda-adicional { font-style: italic; color: #64748B; margin-left: 25px; margin-top: 15px; font-size: 14px; }
     </style>
-""", unsafe_allowed_index=True)
+""", unsafe_allow_html=True) 
 
 # 1. Cargar la Base de Datos
 @st.cache_data # Optimiza la app para que no lea el Excel en cada clic
