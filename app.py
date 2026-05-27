@@ -65,36 +65,59 @@ if df is not None:
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
-        # 3. Renderizado con la lógica de tu Colab
+        # =====================================================================
+        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS
+        # =====================================================================
         for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
             subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
             st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
             
-            # Separar versos con idea y sin idea
+            # Separar versos que tienen una idea asociada de los que no
             con_idea = grupo_subtema[grupo_subtema['Ideas'].notna() & (grupo_subtema['Ideas'].astype(str).str.strip() != "")]
             sin_idea = grupo_subtema[grupo_subtema['Ideas'].isna() | (grupo_subtema['Ideas'].astype(str).str.strip() == "")]
             
-            # Bloque 1: Versículos con ideas específicas
-            idea_actual = None
+            # -----------------------------------------------------------------
+            # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
+            # -----------------------------------------------------------------
+            idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
+            
             for _, fila in con_idea.iterrows():
                 idea_fila = str(fila['Ideas']).strip()
+                
+                # EFECTÚA EL AUTOAGRUPAMIENTO: Solo imprime la idea si cambió respecto a la fila anterior
                 if idea_fila != idea_actual:
                     idea_actual = idea_fila
                     st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
+                # Datos del pasaje
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                 texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
                 
+                # Renderiza el versículo dentro del contenedor de ideas (color beige/transparente)
                 st.markdown(f"""
                     <div class="verso-contenedor-idea">
                         <span class="cita">📖 {cita}</span> — {texto_verso}
                     </div>
                 """, unsafe_allow_html=True)
                 
-            # Bloque 2: Versículos adicionales del subtema
+            # -----------------------------------------------------------------
+            # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
+            # -----------------------------------------------------------------
             if not sin_idea.empty:
+                # Solo muestra el encabezado de "Adicionales" si arriba ya hubo versículos con ideas específicas
                 if not con_idea.empty:
                     st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
+                
+                for _, fila in sin_idea.iterrows():
+                    cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
+                    texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
+                    
+                    # Renderiza el versículo en el contenedor general (gris neutro)
+                    st.markdown(f"""
+                        <div class="verso-contenedor">
+                            <span class="cita">📖 {cita}</span> — {texto_verso}
+                        </div>
+                    """, unsafe_allow_html=True)
                 
                 for _, fila in sin_idea.iterrows():
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
