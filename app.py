@@ -7,15 +7,34 @@ st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖"
 # Estilos visuales personalizados (Estilo Biblia de Estudio)
 st.markdown("""
     <style>
-    .tema-titulo { color: #1E3A8A; font-size: 32px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-    .subtema-titulo { color: #0D9488; font-size: 22px; font-weight: bold; margin-top: 30px; border-bottom: 2px solid #0D9488; padding-bottom: 5px; }
-    .idea-titulo { color: #D97706; font-size: 16px; font-weight: bold; margin-top: 15px; margin-left: 15px; }
-    .verso-contenedor { background-color: #F8FAFC; padding: 15px; border-radius: 8px; border-left: 4px solid #CBD5E1; margin-bottom: 10px; margin-left: 25px; }
-    .verso-contenedor-idea { background-color: #FFFBEB; padding: 15px; border-radius: 8px; border-left: 4px solid #F59E0B; margin-bottom: 10px; margin-left: 35px; }
-    .cita { font-weight: bold; color: #2563EB; }
-    .leyenda-adicional { font-style: italic; color: #64748B; margin-left: 25px; margin-top: 15px; font-size: 14px; }
+    .tema-titulo { color: #3B82F6; font-size: 28px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+    .subtema-titulo { color: #0D9488; font-size: 20px; font-weight: bold; margin-top: 30px; border-bottom: 2px solid #0D9488; padding-bottom: 5px; }
+    .idea-titulo { color: #F59E0B; font-size: 16px; font-weight: bold; margin-top: 15px; margin-left: 15px; }
+    
+    /* Contenedor General (Gris neutro con texto oscuro o claro adaptativo) */
+    .verso-contenedor { 
+        background-color: rgba(148, 163, 184, 0.1); 
+        padding: 15px; 
+        border-radius: 8px; 
+        border-left: 4px solid #94A3B8; 
+        margin-bottom: 10px; 
+        margin-left: 25px;
+    }
+    
+    /* Contenedor de Ideas (Fondo ámbar translúcido que reacciona bien al fondo negro o blanco) */
+    .verso-contenedor-idea { 
+        background-color: rgba(245, 158, 11, 0.15); 
+        padding: 15px; 
+        border-radius: 8px; 
+        border-left: 4px solid #F59E0B; 
+        margin-bottom: 10px; 
+        margin-left: 35px;
+    }
+    
+    .cita { font-weight: bold; color: #60A5FA; }
+    .leyenda-adicional { font-style: italic; color: #94A3B8; margin-left: 25px; margin-top: 15px; font-size: 14px; }
     </style>
-""", unsafe_allow_html=True) 
+""", unsafe_allow_html=True)
 
 # 1. Cargar la Base de Datos
 @st.cache_data # Optimiza la app para que no lea el Excel en cada clic
