@@ -79,7 +79,7 @@ if df is not None:
       # -----------------------------------------------------------------
       # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
       # -----------------------------------------------------------------
-          idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
+        idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
             
           for _, fila in con_idea.iterrows():
               idea_fila = str(fila['Ideas']).strip()
