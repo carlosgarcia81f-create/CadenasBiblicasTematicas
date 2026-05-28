@@ -65,29 +65,29 @@ if df is not None:
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
-        # =====================================================================
-        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS
-        # =====================================================================
-        for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
-            subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
-            st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
+    # =====================================================================
+    # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS
+    # =====================================================================
+    for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
+        subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
+        st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
             
-            # Separar versos que tienen una idea asociada de los que no
-            con_idea = grupo_subtema[grupo_subtema['Ideas'].notna() & (grupo_subtema['Ideas'].astype(str).str.strip() != "")]
-            sin_idea = grupo_subtema[grupo_subtema['Ideas'].isna() | (grupo_subtema['Ideas'].astype(str).str.strip() == "")]
+        # Separar versos que tienen una idea asociada de los que no
+        con_idea = grupo_subtema[grupo_subtema['Ideas'].notna() & (grupo_subtema['Ideas'].astype(str).str.strip() != "")]
+        sin_idea = grupo_subtema[grupo_subtema['Ideas'].isna() | (grupo_subtema['Ideas'].astype(str).str.strip() == "")]
             
-            # -----------------------------------------------------------------
-            # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
-            # -----------------------------------------------------------------
-            idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
+      # -----------------------------------------------------------------
+      # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
+      # -----------------------------------------------------------------
+          idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
             
-            for _, fila in con_idea.iterrows():
-                idea_fila = str(fila['Ideas']).strip()
+          for _, fila in con_idea.iterrows():
+              idea_fila = str(fila['Ideas']).strip()
                 
-                # EFECTÚA EL AUTOAGRUPAMIENTO: Solo imprime la idea si cambió respecto a la fila anterior
-                if idea_fila != idea_actual:
-                    idea_actual = idea_fila
-                    st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
+          # EFECTÚA EL AUTOAGRUPAMIENTO: Solo imprime la idea si cambió respecto a la fila anterior
+              if idea_fila != idea_actual:
+                 idea_actual = idea_fila
+                 st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
                 # Datos del pasaje
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
