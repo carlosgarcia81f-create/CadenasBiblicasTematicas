@@ -81,13 +81,13 @@ if df is not None:
       # -----------------------------------------------------------------
         idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
             
-          for _, fila in con_idea.iterrows():
+        for _, fila in con_idea.iterrows():
               idea_fila = str(fila['Ideas']).strip()
                 
-          # EFECTÚA EL AUTOAGRUPAMIENTO: Solo imprime la idea si cambió respecto a la fila anterior
-              if idea_fila != idea_actual:
-                 idea_actual = idea_fila
-                 st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
+      # EFECTÚA EL AUTOAGRUPAMIENTO: Solo imprime la idea si cambió respecto a la fila anterior
+            if idea_fila != idea_actual:
+               idea_actual = idea_fila
+               st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
                 # Datos del pasaje
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
@@ -100,31 +100,31 @@ if df is not None:
                     </div>
                 """, unsafe_allow_html=True)
                 
-            # -----------------------------------------------------------------
-            # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
-            # -----------------------------------------------------------------
+      # -----------------------------------------------------------------
+      # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
+      # -----------------------------------------------------------------
             if not sin_idea.empty:
                 # Solo muestra el encabezado de "Adicionales" si arriba ya hubo versículos con ideas específicas
-                if not con_idea.empty:
-                    st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
+            if not con_idea.empty:
+                   st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
                 
-                for _, fila in sin_idea.iterrows():
-                    cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                    texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
+            for _, fila in sin_idea.iterrows():
+                cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
+                texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
                     
-                    # Renderiza el versículo en el contenedor general (gris neutro)
-                    st.markdown(f"""
-                        <div class="verso-contenedor">
-                            <span class="cita">📖 {cita}</span> — {texto_verso}
+                # Renderiza el versículo en el contenedor general (gris neutro)
+                st.markdown(f"""
+                    <div class="verso-contenedor">
+                        <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allow_html=True)
                 
-                for _, fila in sin_idea.iterrows():
-                    cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                    texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
+            for _, fila in sin_idea.iterrows():
+                cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
+                texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
                     
-                    st.markdown(f"""
-                        <div class="verso-contenedor">
-                            <span class="cita">📖 {cita}</span> — {texto_verso}
+                st.markdown(f"""
+                     <div class="verso-contenedor">
+                          <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allowed_index=True)
