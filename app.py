@@ -66,15 +66,18 @@ if df is not None:
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
     # =====================================================================
-        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS
+        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (BLINDADO)
         # =====================================================================
         for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
             subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
             st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
             
-            # Separar versos que tienen una idea asociada de los que no
-            con_idea = grupo_subtema[grupo_subtema['Ideas'].notna() & (grupo_subtema['Ideas'].astype(str).str.strip() != "")]
-            sin_idea = grupo_subtema[grupo_subtema['Ideas'].isna() | (grupo_subtema['Ideas'].astype(str).str.strip() == "")]
+            # Aseguramos limpiar espacios en blanco extras de toda la columna 'Ideas' para evitar duplicados visuales
+            grupo_subtema['Ideas'] = grupo_subtema['Ideas'].astype(str).str.strip()
+            
+            # Separar versos que tienen una idea asociada de los que no (filtramos los "nan" o vacíos)
+            con_idea = grupo_subtema[(grupo_subtema['Ideas'].notna()) & (grupo_subtema['Ideas'] != "") & (grupo_subtema['Ideas'] != "nan")]
+            sin_idea = grupo_subtema[(grupo_subtema['Ideas'].isna()) | (grupo_subtema['Ideas'] == "") | (grupo_subtema['Ideas'] == "nan")]
             
             # -----------------------------------------------------------------
             # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
@@ -82,9 +85,9 @@ if df is not None:
             idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
             
             for _, fila in con_idea.iterrows():
-                idea_fila = str(fila['Ideas']).strip()
+                idea_fila = fila['Ideas'] # Ya viene limpia de la línea anterior
                 
-                # EFECTÚA EL AUTOAGRUPAMIENTO: Solo imprime la idea si cambió respecto a la fila anterior
+                # EFECTÚA EL AUTOAGRUPAMIENTO: Compara de forma estricta textos limpios
                 if idea_fila != idea_actual:
                     idea_actual = idea_fila
                     st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
@@ -93,7 +96,7 @@ if df is not None:
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                 texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
                 
-                # Renderiza el versículo dentro del contenedor de ideas (color beige/transparente)
+                # Renderiza el versículo
                 st.markdown(f"""
                     <div class="verso-contenedor-idea">
                         <span class="cita">📖 {cita}</span> — {texto_verso}
@@ -104,7 +107,6 @@ if df is not None:
             # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
             # -----------------------------------------------------------------
             if not sin_idea.empty:
-                # Solo muestra el encabezado de "Adicionales" si arriba ya hubo versículos con ideas específicas
                 if not con_idea.empty:
                     st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
                 
@@ -112,7 +114,6 @@ if df is not None:
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                     texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
                     
-                    # Renderiza el versículo en el contenedor general (gris neutro)
                     st.markdown(f"""
                         <div class="verso-contenedor">
                             <span class="cita">📖 {cita}</span> — {texto_verso}
