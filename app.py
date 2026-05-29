@@ -65,8 +65,8 @@ if df is not None:
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
-    # =====================================================================
-        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (BLINDADO)
+        # =====================================================================
+        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
         # =====================================================================
         for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
             subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
