@@ -1,4 +1,5 @@
 Cosas por implementar
-1. Id de siguiente y anterior, algunos temas si los requieren. 
-2. Descargar o subir una versión de la biblia (LBLA) para que desde ahí se lean los versos
-3. Añadir un buscador por palabra para encontrar temas. 
+1. Añadir un botón de descarga para exportar a pdf y compartirlo. | HECHO
+2. Id de siguiente y anterior, algunos temas si los requieren. 
+3. Descargar o subir una versión de la biblia (LBLA) para que desde ahí se lean los versos
+4. Añadir un buscador por palabra para encontrar temas. 
