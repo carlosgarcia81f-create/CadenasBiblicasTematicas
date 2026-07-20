@@ -1,6 +1,7 @@
 # generador_pdf.py
 import pandas as pd
 from fpdf import FPDF
+from utilidades import limpiar_texto_biblico
 
 class PDFEstudio(FPDF):
     def __init__(self, titulo_estudio):
