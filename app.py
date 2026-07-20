@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from generador_pdf import crear_pdf_estudio
+from utilidades import limpiar_texto_biblico
+
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
 
@@ -94,7 +96,7 @@ if df is not None:
                 
                 # Datos del pasaje
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
+                texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
                 
                 # Renderiza el versículo
                 st.markdown(f"""
@@ -112,7 +114,7 @@ if df is not None:
                 
                 for _, fila in sin_idea.iterrows():
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                    texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
+                    texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
                     
                     st.markdown(f"""
                         <div class="verso-contenedor">
