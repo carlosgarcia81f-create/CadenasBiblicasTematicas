@@ -39,7 +39,7 @@ def crear_pdf_estudio(df_estudio, titulo_tema):
         pdf.ln(3)
         pdf.set_font('Helvetica', 'B', 12)
         pdf.set_text_color(13, 148, 136)  # Teal / Verde agua
-        pdf.cell(0, 8, f'SUBTEMA: {subtema_str.upper()}', ln=True)
+        pdf.cell(0, 8, f'{subtema_str.upper()}', ln=True)
         pdf.set_draw_color(13, 148, 136)
         pdf.line(10, pdf.get_y(), 200, pdf.get_y())
         pdf.ln(3)
