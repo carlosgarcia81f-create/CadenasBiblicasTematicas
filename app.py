@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-
+from generador_pdf import crear_pdf_estudio
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
 
@@ -119,3 +119,17 @@ if df is not None:
                             <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allow_html=True)
+if tema_seleccionado:
+    resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
+    
+    # -----------------------------------------------------------------
+    # GENERACIÓN Y BOTÓN DE DESCARGA DE PDF (Llamando a tu módulo)
+    # -----------------------------------------------------------------
+    bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
+    
+    st.download_button(
+        label="📥 Descargar Estudio en PDF",
+        data=bytes_pdf,
+        file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
+        mime="application/pdf"
+    )
