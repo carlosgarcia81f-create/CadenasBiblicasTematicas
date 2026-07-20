@@ -51,7 +51,7 @@ def crear_pdf_estudio(df_estudio, titulo_tema):
             tiene_idea = idea_fila not in ["", "nan", "None"]
             
             cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-            texto_verso = str(fila['Texto_Verso']).replace('_x000D_', '').strip()
+            texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
             
             # Imprimir Idea si cambió
             if tiene_idea and idea_fila != idea_actual:
