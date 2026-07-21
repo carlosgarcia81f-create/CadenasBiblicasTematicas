@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
+from generador_html import crear_html_estudio
 
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
@@ -125,13 +126,28 @@ if tema_seleccionado:
     resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
     
     # -----------------------------------------------------------------
-    # GENERACIÓN Y BOTÓN DE DESCARGA DE PDF (Llamando a tu módulo)
+    # BOTONES DE DESCARGA (PDF Carta e HTML Móvil)
     # -----------------------------------------------------------------
-    bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
+    col1, col2 = st.columns(2)
     
-    st.download_button(
-        label="📥 Descargar Estudio en PDF",
-        data=bytes_pdf,
-        file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
-        mime="application/pdf"
-    )
+    with col1:
+        # Opción 1: PDF para Impresión
+        bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
+        st.download_button(
+            label="📄 PDF para Imprimir (Carta)",
+            data=bytes_pdf,
+            file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+        
+    with col2:
+        # Opción 2: HTML Responsivo para Móvil
+        bytes_html = crear_html_estudio(resultado, tema_seleccionado)
+        st.download_button(
+            label="📱 Versión Móvil (.html)",
+            data=bytes_html,
+            file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}_movil.html",
+            mime="text/html",
+            use_container_width=True
+        )
