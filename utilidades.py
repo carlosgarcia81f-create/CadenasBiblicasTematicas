@@ -27,3 +27,26 @@ def limpiar_texto_biblico(texto):
     texto_limpio = re.sub(r'\s+', ' ', texto_limpio).strip()
     
     return texto_limpio
+
+def sanitizar_para_pdf(texto):
+    if not texto:
+        return ""
+    
+    # Reemplazamos los caracteres tipográficos más comunes por versiones estándar
+    reemplazos = {
+        '—': '-',    # Raya / Guion largo
+        '–': '-',    # Guion medio
+        '“': '"',    # Comilla doble apertura
+        '”': '"',    # Comilla doble cierre
+        '‘': "'",    # Comilla simple apertura
+        '’': "'",    # Comilla simple cierre
+        '…': '...',  # Puntos suspensivos
+        'É': 'É',    # Por si hay temas de acentos en fuentes básicas
+    }
+    
+    texto_limpio = str(texto)
+    for origen, destino in reemplazos.items():
+        texto_limpio = texto_limpio.replace(origen, destino)
+        
+    # Forzamos la conversión a Latin-1 ignorando cualquier otro carácter extraño que se colara
+    return texto_limpio.encode('latin-1', 'replace').decode('latin-1')
