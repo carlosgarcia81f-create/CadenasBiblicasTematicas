@@ -2,6 +2,7 @@
 import pandas as pd
 from fpdf import FPDF
 from utilidades import limpiar_texto_biblico
+from utilidades import sanitizar_para_pdf
 
 class PDFEstudio(FPDF):
     def __init__(self, titulo_estudio):
@@ -35,6 +36,7 @@ def crear_pdf_estudio(df_estudio, titulo_tema):
     # Recorremos la estructura de Subtemas, Ideas y Versículos
     for subtema, grupo_subtema in df_estudio.groupby('Subtema', sort=False):
         subtema_str = str(subtema).strip() if pd.notna(subtema) and str(subtema).strip() not in ["", "nan", "None"] else "ESTUDIO GENERAL"
+
         
         # Formato de Subtema
         pdf.ln(3)
@@ -52,7 +54,7 @@ def crear_pdf_estudio(df_estudio, titulo_tema):
             tiene_idea = idea_fila not in ["", "nan", "None"]
             
             cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-            texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
+            texto_verso = sanitizar_para_pdf(limpiar_texto_biblico(fila['Texto_Verso']))
             
             # Imprimir Idea si cambió
             if tiene_idea and idea_fila != idea_actual:
