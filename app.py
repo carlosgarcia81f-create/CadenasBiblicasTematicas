@@ -45,6 +45,11 @@ def cargar_datos():
     archivo_excel = "BD_Temas.xlsm"
     try:
         df = pd.read_excel(archivo_excel, sheet_name="BD", engine='openpyxl')
+        
+        if 'Capítulo' in df.columns: # LIMPIEZA DE COLUMNAS NUMÉRICAS (Evita decimales como 19.0)
+            # Convierte a numérico por si hay textos sueltos, quita decimales y pasa a entero
+            df['Capítulo'] = pd.to_numeric(df['Capítulo'], errors='coerce').fillna(0).astype(int).astype(str)
+            
         return df
     except Exception as e:
         st.error(f"Error al cargar el archivo BD_Temas.xlsm: {e}")
