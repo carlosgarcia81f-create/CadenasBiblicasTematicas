@@ -69,21 +69,62 @@ def cargar_datos():
 df = cargar_datos()
 ### Hasta aquí ok 1 
 
+# =====================================================================
+# 2. LÓGICA DE FILTROS (SOPORTE PARA MÚLTIPLES CATEGORÍAS POR FILA)
+# =====================================================================
 if df is not None:
     st.title("📖 Sistema de Cadenas Devocionales")
     st.write("Herramienta de estudio bíblico personalizado para el discipulado.")
 
-    # 2. Buscador en la barra lateral
-    lista_temas = sorted(df['Tema_Principal'].dropna().unique())
+    # Botón de recarga manual para ti y tus colaboradores
+    if st.sidebar.button("🔄 Actualizar datos de Google Sheets"):
+        st.cache_data.clear()
+        st.rerun()
+
+    st.sidebar.header("🔍 Navegación")
+    
+    # Manejo de la columna 'Categoría' o 'Categoría' (con o sin acento)
+    col_cat = [col for col in df.columns if 'Categor' in col]
+    nombre_col_cat = col_cat[0] if col_cat else None
+
+    df_filtrado = df.copy()
+
+    if nombre_col_cat and df[nombre_col_cat].notna().any():
+        # Extraemos todas las etiquetas individuales separando por salto de línea (\n) o comas
+        raw_categorias = df[nombre_col_cat].dropna().astype(str).tolist()
+        
+        lista_categorias = set()
+        for celda in raw_categorias:
+            # Separa por saltos de línea o comas
+            items = [item.strip() for item in celda.replace('\r', '').split('\n') if item.strip()]
+            for item in items:
+                # Si una celda venía separada por comas dentro del texto
+                sub_items = [s.strip() for s in item.split(',') if s.strip()]
+                lista_categorias.update(sub_items)
+
+        categorias_unicas = ["Todas"] + sorted(list(lista_categorias))
+        cat_seleccionada = st.sidebar.selectbox("Selecciona una Categoría:", categorias_unicas)
+        
+        # Filtrado flexible: Busca si la categoría seleccionada está dentro del texto de la celda
+        if cat_seleccionada != "Todas":
+            df_filtrado = df[df[nombre_col_cat].fillna('').astype(str).str.contains(cat_seleccionada, regex=False)]
+
+    # Filtro dinámico de Temas Principales según la Categoría elegida
+    lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
     tema_seleccionado = st.sidebar.selectbox("Selecciona un Tema de Estudio:", lista_temas)
 
+    # =====================================================================
+    # 3. RENDERIZADO DEL ESTUDIO
+    # =====================================================================
     if tema_seleccionado:
-        # Filtrar registros y asegurar el orden secuencial por ID_REF
-        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
+        # Recuperamos todos los pasajes del tema seleccionado (filtrando por la llave ID_REF / ID_RI)
+        col_id = 'ID_REF' if 'ID_REF' in df.columns else 'ID_RI'
+        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=[col_id])
         
-        # Título Principal del Estudio
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
+        
+        # (Aquí continúa tu bucle groupby por 'Subtema' e 'Ideas' habitual...)
         
         # =====================================================================
         # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
