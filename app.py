@@ -39,23 +39,35 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 1. Cargar la Base de Datos
-@st.cache_data # Optimiza la app para que no lea el Excel en cada clic
+# =====================================================================
+# 1. CARGAR LA BASE DE DATOS DESDE GOOGLE SHEETS
+# =====================================================================
+SHEET_ID = '1vUPyJOzAWLt85v_ZtjD6z-hu72_0shOJsoDnLHH_D0k' #TU_ID_DE_GOOGLE_SHEET_AQUI
+SHEET_NAME = "BD"  # Asegúrate de usar el nombre exacto de la pestaña
+
+URL_GSHEETS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+
+@st.cache_data(ttl=300)
 def cargar_datos():
-    archivo_excel = "BD_Temas.xlsm"
     try:
-        df = pd.read_excel(archivo_excel, sheet_name="BD", engine='openpyxl')
+        df = pd.read_csv(URL_GSHEETS)
         
-        if 'Capítulo' in df.columns: # LIMPIEZA DE COLUMNAS NUMÉRICAS (Evita decimales como 19.0)
-            # Convierte a numérico por si hay textos sueltos, quita decimales y pasa a entero
+        # Limpieza de nombres de columnas (quita espacios extras si los hay)
+        df.columns = df.columns.str.strip()
+        
+        if 'Capítulo' in df.columns:
             df['Capítulo'] = pd.to_numeric(df['Capítulo'], errors='coerce').fillna(0).astype(int).astype(str)
+            
+        if 'Versículo' in df.columns:
+            df['Versículo'] = df['Versículo'].astype(str)
             
         return df
     except Exception as e:
-        st.error(f"Error al cargar el archivo BD_Temas.xlsm: {e}")
+        st.error(f"Error al conectar con Google Sheets: {e}")
         return None
 
 df = cargar_datos()
+### Hasta aquí ok 1 
 
 if df is not None:
     st.title("📖 Sistema de Cadenas Devocionales")
