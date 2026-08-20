@@ -209,3 +209,12 @@ if tema_seleccionado:
             mime="text/html",
             use_container_width=True
         )
+
+    # -----------------------------------------------------------------
+    # SECCIÓN: EXPORTAR A NOTION
+    # -----------------------------------------------------------------
+    with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
+        texto_markdown = generar_markdown_notion(resultado, tema_seleccionado)
+        
+        st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro) y pégalo directo en cualquier página de Notion:")
+        st.code(texto_markdown, language="markdown")
