@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
+from utilidades import generar_markdown_notion
 from generador_html import crear_html_estudio
 
 # Configuración de la página web
