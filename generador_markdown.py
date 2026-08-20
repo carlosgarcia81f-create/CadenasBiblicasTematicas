@@ -1,3 +1,5 @@
+import pandas as pd
+
 def generar_markdown(df_tema, nombre_tema):
     md = []
     # Título Principal del Estudio (Heading 1 en Notion)
