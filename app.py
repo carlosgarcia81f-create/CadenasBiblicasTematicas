@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
-from utilidades import generar_markdown_notion
+from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
 
 # Configuración de la página web
@@ -215,7 +215,7 @@ if tema_seleccionado:
     # SECCIÓN: EXPORTAR A NOTION
     # -----------------------------------------------------------------
     with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
-        texto_markdown = generar_markdown_notion(resultado, tema_seleccionado)
+        texto_markdown = generar_markdown(resultado, tema_seleccionado)
         
-        st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro) y pégalo directo en cualquier página de Notion:")
+        st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
         st.code(texto_markdown, language="markdown")
