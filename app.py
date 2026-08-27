@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
+from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
 
 # Configuración de la página web
@@ -39,39 +40,92 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 1. Cargar la Base de Datos
-@st.cache_data # Optimiza la app para que no lea el Excel en cada clic
+# =====================================================================
+# 1. CARGAR LA BASE DE DATOS DESDE GOOGLE SHEETS
+# =====================================================================
+SHEET_ID = '1vUPyJOzAWLt85v_ZtjD6z-hu72_0shOJsoDnLHH_D0k' #TU_ID_DE_GOOGLE_SHEET_AQUI
+SHEET_NAME = "BD"  # Asegúrate de usar el nombre exacto de la pestaña
+
+URL_GSHEETS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+
+@st.cache_data(ttl=300)
 def cargar_datos():
-    archivo_excel = "BD_Temas.xlsm"
     try:
-        df = pd.read_excel(archivo_excel, sheet_name="BD", engine='openpyxl')
+        df = pd.read_csv(URL_GSHEETS)
         
-        if 'Capítulo' in df.columns: # LIMPIEZA DE COLUMNAS NUMÉRICAS (Evita decimales como 19.0)
-            # Convierte a numérico por si hay textos sueltos, quita decimales y pasa a entero
+        # Limpieza de nombres de columnas (quita espacios extras si los hay)
+        df.columns = df.columns.str.strip()
+        
+        if 'Capítulo' in df.columns:
             df['Capítulo'] = pd.to_numeric(df['Capítulo'], errors='coerce').fillna(0).astype(int).astype(str)
+            
+        if 'Versículo' in df.columns:
+            df['Versículo'] = df['Versículo'].astype(str)
             
         return df
     except Exception as e:
-        st.error(f"Error al cargar el archivo BD_Temas.xlsm: {e}")
+        st.error(f"Error al conectar con Google Sheets: {e}")
         return None
 
 df = cargar_datos()
+### Hasta aquí ok 1 
 
+# =====================================================================
+# 2. LÓGICA DE FILTROS (SOPORTE PARA MÚLTIPLES CATEGORÍAS POR FILA)
+# =====================================================================
 if df is not None:
     st.title("📖 Sistema de Cadenas Devocionales")
     st.write("Herramienta de estudio bíblico personalizado para el discipulado.")
 
-    # 2. Buscador en la barra lateral
-    lista_temas = sorted(df['Tema_Principal'].dropna().unique())
+    # Botón de recarga manual para ti y tus colaboradores
+    if st.sidebar.button("🔄 Actualizar datos de Google Sheets"):
+        st.cache_data.clear()
+        st.rerun()
+
+    st.sidebar.header("🔍 Navegación")
+    
+    # Manejo de la columna 'Categoría' o 'Categoría' (con o sin acento)
+    col_cat = [col for col in df.columns if 'Categor' in col]
+    nombre_col_cat = col_cat[0] if col_cat else None
+
+    df_filtrado = df.copy()
+
+    if nombre_col_cat and df[nombre_col_cat].notna().any():
+        # Extraemos todas las etiquetas individuales separando por salto de línea (\n) o comas
+        raw_categorias = df[nombre_col_cat].dropna().astype(str).tolist()
+        
+        lista_categorias = set()
+        for celda in raw_categorias:
+            # Separa por saltos de línea o comas
+            items = [item.strip() for item in celda.replace('\r', '').split('\n') if item.strip()]
+            for item in items:
+                # Si una celda venía separada por comas dentro del texto
+                sub_items = [s.strip() for s in item.split(',') if s.strip()]
+                lista_categorias.update(sub_items)
+
+        categorias_unicas = ["Todas"] + sorted(list(lista_categorias))
+        cat_seleccionada = st.sidebar.selectbox("Selecciona una Categoría:", categorias_unicas)
+        
+        # Filtrado flexible: Busca si la categoría seleccionada está dentro del texto de la celda
+        if cat_seleccionada != "Todas":
+            df_filtrado = df[df[nombre_col_cat].fillna('').astype(str).str.contains(cat_seleccionada, regex=False)]
+
+    # Filtro dinámico de Temas Principales según la Categoría elegida
+    lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
     tema_seleccionado = st.sidebar.selectbox("Selecciona un Tema de Estudio:", lista_temas)
 
+    # =====================================================================
+    # 3. RENDERIZADO DEL ESTUDIO
+    # =====================================================================
     if tema_seleccionado:
-        # Filtrar registros y asegurar el orden secuencial por ID_REF
-        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
+        # Recuperamos todos los pasajes del tema seleccionado (filtrando por la llave ID_REF / ID_RI)
+        col_id = 'ID_REF' if 'ID_REF' in df.columns else 'ID_RI'
+        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=[col_id])
         
-        # Título Principal del Estudio
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
+        
+        # (Aquí continúa tu bucle groupby por 'Subtema' e 'Ideas' habitual...)
         
         # =====================================================================
         # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
@@ -156,3 +210,12 @@ if tema_seleccionado:
             mime="text/html",
             use_container_width=True
         )
+
+    # -----------------------------------------------------------------
+    # SECCIÓN: EXPORTAR A NOTION
+    # -----------------------------------------------------------------
+    with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
+        texto_markdown = generar_markdown(resultado, tema_seleccionado)
+        
+        st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
+        st.code(texto_markdown, language="markdown")
