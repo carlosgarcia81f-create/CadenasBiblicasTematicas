@@ -5,6 +5,7 @@ from utilidades import limpiar_texto_biblico
 from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
 from generador_markmap import generar_markmap
+from mostrar_mapa_mental_interactivo import mostrar_mapa_interactivo
 
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
@@ -126,8 +127,7 @@ if df is not None:
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
-        # (Aquí continúa tu bucle groupby por 'Subtema' e 'Ideas' habitual...)
-        
+       
         # =====================================================================
         # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
         # =====================================================================
@@ -227,4 +227,19 @@ if tema_seleccionado:
         texto_markmap = generar_markmap(resultado, tema_seleccionado)
         
         st.write("Copia este código y pégalo en [markmap.js.org/repl](https://markmap.js.org/repl) para ver tu estudio como un mapa mental interactivo:")
-        st.code(texto_markmap, language="markdown")        
+        st.code(texto_markmap, language="markdown")
+    # -----------------------------------------------------------------
+    # VISOR INTERACTIVO DEL MAPA MENTAL
+    # -----------------------------------------------------------------
+    with st.expander("🗺️ Ver Mapa Mental Interactivo del Estudio", expanded=False):
+        st.write("Explora las conexiones entre Subtemas, Ideas y Pasajes. *Puedes hacer zoom, arrastrar la pantalla o hacer clic en los nodos para colapsarlos.*")
+        
+        # Genera el código Markmap jerárquico
+        texto_markmap = generar_markmap(resultado, tema_seleccionado)
+        
+        # Renderiza el SVG interactivo integrado
+        mostrar_mapa_interactivo(texto_markmap, height=550)
+        
+        # Mantiene el código copiable por si lo quieren usar en Notion/Obsidian
+        st.caption("¿Quieres llevarte el código a Notion o VS Code?")
+        st.code(texto_markmap, language="markdown")
