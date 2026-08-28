@@ -1,9 +1,10 @@
+import json
 import streamlit.components.v1 as components
 
-def mostrar_mapa_interactivo(texto_markmap, height=500):
-    """
-    Renders an interactive Markmap SVG directly inside the Streamlit app.
-    """
+def mostrar_mapa_interactivo(texto_markmap, height=550):
+    # Convierte el string de Python a una cadena JSON válida y segura para JS
+    markdown_json = json.dumps(texto_markmap)
+    
     html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -18,28 +19,27 @@ def mostrar_mapa_interactivo(texto_markmap, height=500):
                 overflow: hidden;
                 background-color: #ffffff;
             }}
-            #mindmap {{
+            .markmap {{
                 width: 100%;
                 height: 100%;
             }}
         </style>
-        <!-- Librerías oficiales de Markmap vía CDN -->
-        <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-        <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4/dist/browser/index.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4/dist/index.js"></script>
+        <!-- Configuración de Markmap para ajustar vista automáticamente -->
+        <script>
+            window.markmap = {{
+                autoFit: true,
+                duration: 300
+            }};
+        </script>
+        <!-- Carga de scripts oficiales auto-contenidos -->
+        <script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.15.4"></script>
     </head>
     <body>
-        <svg id="mindmap"></svg>
-        <script>
-            const {{ Markmap, loadCSS, loadJS }} = window.markmap;
-            const markdownText = `{texto_markmap.replace("`", "'")}`;
-            
-            const {{ root }} = window.markmap.Transformer ? 
-                new window.markmap.Transformer().transform(markdownText) : 
-                window.markmap.transform(markdownText);
-                
-            Markmap.create('#mindmap', null, root);
-        </script>
+        <div class="markmap">
+            <script type="text/template">
+                {texto_markmap}
+            </script>
+        </div>
     </body>
     </html>
     """
