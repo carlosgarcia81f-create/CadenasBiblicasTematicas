@@ -3,10 +3,7 @@ import pandas as pd
 def generar_markmap(df_tema, nombre_tema):
     md = []
     
-    # -------------------------------------------------------------
-    # CONFIGURACIÓN DE MARKMAP (Frontmatter)
-    # initialExpandLevel: 3 -> Muestra hasta Subtemas e Ideas principales.
-    # -------------------------------------------------------------
+    # Encabezado Frontmatter para editores compatibles (Obsidian, VS Code, etc.)
     md.append("---")
     md.append("markmap:")
     md.append("  initialExpandLevel: 3")
@@ -22,19 +19,19 @@ def generar_markmap(df_tema, nombre_tema):
     for subtema, df_subtema in df_tema.groupby(col_subtema, sort=False):
         md.append(f"## {subtema}\n")
         
-        # Agrupamos por Idea permitiendo valores nulos (dropna=False)
+        # Agrupamos por Idea permitiendo valores nulos
         for idea, df_idea in df_subtema.groupby(col_idea, sort=False, dropna=False):
             
             # CASO A: La fila SÍ tiene una Idea
             if pd.notna(idea) and str(idea).strip() != "" and str(idea).strip().lower() != "nan":
                 md.append(f"### {idea}\n")
-                indent_pasaje = "####" # El pasaje va en Nivel 4
-                indent_nota = "#####"  # La nota va en Nivel 5
+                indent_pasaje = "####" # Pasaje en Nivel 4
+                indent_nota = "#####"  # Nota en Nivel 5
             
             # CASO B: La fila NO tiene Idea (celda vacía)
             else:
-                indent_pasaje = "###"  # El pasaje sube a Nivel 3 directo en el Subtema
-                indent_nota = "####"   # La nota sube a Nivel 4
+                indent_pasaje = "###"  # Pasaje en Nivel 3 directo
+                indent_nota = "####"   # Nota en Nivel 4
             
             # Renderizamos los pasajes
             for _, fila in df_idea.iterrows():
@@ -56,7 +53,7 @@ def generar_markmap(df_tema, nombre_tema):
 
 def crear_html_markmap(texto_markmap, nombre_tema):
     """
-    Genera una página HTML completa, multicolor e interactiva lista para descargar.
+    Genera una página HTML completa, multicolor e interactiva que abre en el Nivel 3.
     """
     html_plantilla = f"""<!DOCTYPE html>
 <html lang="es">
@@ -82,10 +79,12 @@ def crear_html_markmap(texto_markmap, nombre_tema):
             height: 100vh;
         }}
     </style>
+    <!-- Configuración previa para forzar el nivel de expansión a Nivel 3 -->
     <script>
         window.markmap = {{
             autoFit: true,
-            duration: 300
+            duration: 300,
+            initialExpandLevel: 3
         }};
     </script>
     <script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.15.4"></script>
