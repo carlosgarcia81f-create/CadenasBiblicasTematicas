@@ -4,7 +4,7 @@ from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
 from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
-from generador_markmap import generar_markmap
+from generador_markmap import generar_markmap, crear_html_markmap
 from mostrar_mapa_mental_interactivo import mostrar_mapa_interactivo
 
 # Configuración de la página web
@@ -221,25 +221,27 @@ if tema_seleccionado:
         st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
         st.code(texto_markdown, language="markdown")
     # -----------------------------------------------------------------
-    # SECCIÓN: EXPORTAR A MARKMAP (MAPAS MENTALES)
-    # -----------------------------------------------------------------
-    with st.expander("🧠 Copiar en formato Markdown (Para Mapas Mentales en Markmap)"):
-        texto_markmap = generar_markmap(resultado, tema_seleccionado)
-        
-        st.write("Copia este código y pégalo en [markmap.js.org/repl](https://markmap.js.org/repl) para ver tu estudio como un mapa mental interactivo:")
-        st.code(texto_markmap, language="markdown")
-    # -----------------------------------------------------------------
-    # VISOR INTERACTIVO DEL MAPA MENTAL
+    # VISOR E INTEGRACIÓN DE MARKMAP
     # -----------------------------------------------------------------
     with st.expander("🗺️ Ver Mapa Mental Interactivo del Estudio", expanded=False):
-        st.write("Explora las conexiones entre Subtemas, Ideas y Pasajes. *Puedes hacer zoom, arrastrar la pantalla o hacer clic en los nodos para colapsarlos.*")
+        st.write("Explora las conexiones entre Subtemas, Ideas y Pasajes. *El mapa inicia mostrando hasta las Ideas (Nivel 3). Haz clic en los círculos para desplegar u ocultar los pasajes bíblicos.*")
         
-        # Genera el código Markmap jerárquico
         texto_markmap = generar_markmap(resultado, tema_seleccionado)
         
-        # Renderiza el SVG interactivo integrado
+        # Renderiza el mapa mental en pantalla
         mostrar_mapa_interactivo(texto_markmap, height=550)
         
-        # Mantiene el código copiable por si lo quieren usar en Notion/Obsidian
-        st.caption("¿Quieres llevarte el código a Notion o VS Code?")
+        # Generar archivo HTML para descarga
+        html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
+        nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
+        
+        # Botón de descarga del mapa interactivo
+        st.download_button(
+            label="🌐 Descargar Mapa Mental Interactivo (.html)",
+            data=html_mapa,
+            file_name=nombre_archivo_mapa,
+            mime="text/html"
+        )
+        
+        st.caption("¿Quieres llevarte el código a Notion u Obsidian?")
         st.code(texto_markmap, language="markdown")
