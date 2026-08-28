@@ -5,7 +5,6 @@ from utilidades import limpiar_texto_biblico
 from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
 from generador_markmap import generar_markmap, crear_html_markmap
-from mostrar_mapa_mental_interactivo import mostrar_mapa_interactivo
 
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
@@ -221,21 +220,16 @@ if tema_seleccionado:
         st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
         st.code(texto_markdown, language="markdown")
     # -----------------------------------------------------------------
-    # VISOR E INTEGRACIÓN DE MARKMAP
+    # SECCIÓN: MARKMAP (MAPA MENTAL EXPORTABLE Y DESCARGABLE)
     # -----------------------------------------------------------------
-    with st.expander("🗺️ Ver Mapa Mental Interactivo del Estudio", expanded=False):
-        st.write("Explora las conexiones entre Subtemas, Ideas y Pasajes. *El mapa inicia mostrando hasta las Ideas (Nivel 3). Haz clic en los círculos para desplegar u ocultar los pasajes bíblicos.*")
+    with st.expander("🧠 Mapa Mental del Estudio (Descarga e Integración)", expanded=False):
+        st.write("Genera un mapa mental jerárquico que inicia mostrando hasta las **Ideas (Nivel 3)** con ramas de múltiples colores.")
         
         texto_markmap = generar_markmap(resultado, tema_seleccionado)
-        
-        # Renderiza el mapa mental en pantalla
-        mostrar_mapa_interactivo(texto_markmap, height=550)
-        
-        # Generar archivo HTML para descarga
         html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
         nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
         
-        # Botón de descarga del mapa interactivo
+        # Botón de descarga directa del HTML interactivo
         st.download_button(
             label="🌐 Descargar Mapa Mental Interactivo (.html)",
             data=html_mapa,
@@ -243,5 +237,5 @@ if tema_seleccionado:
             mime="text/html"
         )
         
-        st.caption("¿Quieres llevarte el código a Notion u Obsidian?")
+        st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
         st.code(texto_markmap, language="markdown")
