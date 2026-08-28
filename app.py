@@ -4,6 +4,7 @@ from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
 from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
+from generador_markmap import generar_markmap
 
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
@@ -219,3 +220,11 @@ if tema_seleccionado:
         
         st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
         st.code(texto_markdown, language="markdown")
+    # -----------------------------------------------------------------
+    # SECCIÓN: EXPORTAR A MARKMAP (MAPAS MENTALES)
+    # -----------------------------------------------------------------
+    with st.expander("🧠 Copiar en formato Markdown (Para Mapas Mentales en Markmap)"):
+        texto_markmap = generar_markmap(resultado, tema_seleccionado)
+        
+        st.write("Copia este código y pégalo en [markmap.js.org/repl](https://markmap.js.org/repl) para ver tu estudio como un mapa mental interactivo:")
+        st.code(texto_markmap, language="markdown")        
