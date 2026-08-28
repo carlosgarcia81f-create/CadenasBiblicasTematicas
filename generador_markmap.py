@@ -5,8 +5,7 @@ def generar_markmap(df_tema, nombre_tema):
     
     # -------------------------------------------------------------
     # CONFIGURACIÓN DE MARKMAP (Frontmatter)
-    # initialExpandLevel: 3 -> Muestra hasta el Nivel 3 (Ideas).
-    # Se quitó 'colorFreezeLevel' para recuperar las ramas multicolor.
+    # initialExpandLevel: 3 -> Muestra hasta Subtemas e Ideas principales.
     # -------------------------------------------------------------
     md.append("---")
     md.append("markmap:")
@@ -23,26 +22,32 @@ def generar_markmap(df_tema, nombre_tema):
     for subtema, df_subtema in df_tema.groupby(col_subtema, sort=False):
         md.append(f"## {subtema}\n")
         
-        # Nivel 3: Ideas
-        for idea, df_idea in df_subtema.groupby(col_idea, sort=False):
-            if pd.notna(idea) and str(idea).strip() != "":
-                md.append(f"### {idea}\n")
-                indent = "####"
-            else:
-                indent = "###"
+        # Agrupamos por Idea permitiendo valores nulos (dropna=False)
+        for idea, df_idea in df_subtema.groupby(col_idea, sort=False, dropna=False):
             
-            # Nivel 4: Citas Bíblicas y Pasajes
+            # CASO A: La fila SÍ tiene una Idea
+            if pd.notna(idea) and str(idea).strip() != "" and str(idea).strip().lower() != "nan":
+                md.append(f"### {idea}\n")
+                indent_pasaje = "####" # El pasaje va en Nivel 4
+                indent_nota = "#####"  # La nota va en Nivel 5
+            
+            # CASO B: La fila NO tiene Idea (celda vacía)
+            else:
+                indent_pasaje = "###"  # El pasaje sube a Nivel 3 directo en el Subtema
+                indent_nota = "####"   # La nota sube a Nivel 4
+            
+            # Renderizamos los pasajes
             for _, fila in df_idea.iterrows():
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                 texto_verso = str(fila['Texto_Verso']).strip()
                 
-                md.append(f"{indent} **{cita}** - {texto_verso}")
+                md.append(f"{indent_pasaje} **{cita}** - {texto_verso}")
                 
-                # Nivel 5: Notas explicativas (Si existen)
+                # Renderizamos Notas Explicativas (si existen)
                 if 'Notas' in fila and pd.notna(fila['Notas']):
                     nota_texto = str(fila['Notas']).strip()
                     if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
-                        md.append(f"{indent}# 💡 *Nota:* {nota_texto}")
+                        md.append(f"{indent_nota} 💡 *Nota:* {nota_texto}")
                         
                 md.append("")
                 
