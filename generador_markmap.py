@@ -6,12 +6,11 @@ def generar_markmap(df_tema, nombre_tema):
     # -------------------------------------------------------------
     # CONFIGURACIÓN DE MARKMAP (Frontmatter)
     # initialExpandLevel: 3 -> Muestra hasta el Nivel 3 (Ideas).
-    # El Nivel 4 (Versículos) e inferiores quedan colapsados.
+    # Se quitó 'colorFreezeLevel' para recuperar las ramas multicolor.
     # -------------------------------------------------------------
     md.append("---")
     md.append("markmap:")
     md.append("  initialExpandLevel: 3")
-    md.append("  colorFreezeLevel: 2")
     md.append("---\n")
     
     # Nivel 1: Tema Principal
@@ -52,7 +51,7 @@ def generar_markmap(df_tema, nombre_tema):
 
 def crear_html_markmap(texto_markmap, nombre_tema):
     """
-    Genera una página HTML completa y autocontenida lista para descargar y compartir.
+    Genera una página HTML completa, multicolor e interactiva lista para descargar.
     """
     html_plantilla = f"""<!DOCTYPE html>
 <html lang="es">
@@ -67,11 +66,11 @@ def crear_html_markmap(texto_markmap, nombre_tema):
             box-sizing: border-box;
         }}
         html, body {{
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             overflow: hidden;
             font-family: sans-serif;
-            background-color: #f8f9fa;
+            background-color: #ffffff;
         }}
         .markmap {{
             width: 100vw;
