@@ -2,6 +2,18 @@ import pandas as pd
 
 def generar_markmap(df_tema, nombre_tema):
     md = []
+    
+    # -------------------------------------------------------------
+    # CONFIGURACIÓN DE MARKMAP (Frontmatter)
+    # initialExpandLevel: 3 -> Muestra hasta el Nivel 3 (Ideas).
+    # El Nivel 4 (Versículos) e inferiores quedan colapsados.
+    # -------------------------------------------------------------
+    md.append("---")
+    md.append("markmap:")
+    md.append("  initialExpandLevel: 3")
+    md.append("  colorFreezeLevel: 2")
+    md.append("---\n")
+    
     # Nivel 1: Tema Principal
     md.append(f"# 📖 {nombre_tema.upper()}\n")
     
@@ -25,16 +37,61 @@ def generar_markmap(df_tema, nombre_tema):
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                 texto_verso = str(fila['Texto_Verso']).strip()
                 
-                # Para que el mapa mental no cree nodos gigantescos, acortamos el texto en el nodo principal
-                # si es muy largo, pero mantenemos la cita clara.
                 md.append(f"{indent} **{cita}** - {texto_verso}")
                 
-                # Nivel 5: Notas explicativas (Condicional)
+                # Nivel 5: Notas explicativas (Si existen)
                 if 'Notas' in fila and pd.notna(fila['Notas']):
                     nota_texto = str(fila['Notas']).strip()
                     if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
                         md.append(f"{indent}# 💡 *Nota:* {nota_texto}")
                         
-                md.append("") # Línea en blanco entre ramas
+                md.append("")
                 
     return "\n".join(md)
+
+
+def crear_html_markmap(texto_markmap, nombre_tema):
+    """
+    Genera una página HTML completa y autocontenida lista para descargar y compartir.
+    """
+    html_plantilla = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Mental - {nombre_tema}</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        html, body {{
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: sans-serif;
+            background-color: #f8f9fa;
+        }}
+        .markmap {{
+            width: 100vw;
+            height: 100vh;
+        }}
+    </style>
+    <script>
+        window.markmap = {{
+            autoFit: true,
+            duration: 300
+        }};
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.15.4"></script>
+</head>
+<body>
+    <div class="markmap">
+        <script type="text/template">
+{texto_markmap}
+        </script>
+    </div>
+</body>
+</html>"""
+    return html_plantilla
