@@ -1,8 +1,9 @@
-import json
+import base64
 import streamlit.components.v1 as components
 
 def mostrar_mapa_interactivo(texto_markmap, height=550):
-    markdown_json = json.dumps(texto_markmap)
+    # Codificamos el texto Markdown en Base64 para evitar errores de sintaxis en JS
+    b64_markdown = base64.b64encode(texto_markmap.encode('utf-8')).decode('utf-8')
     
     html_code = f"""
     <!DOCTYPE html>
@@ -19,18 +20,16 @@ def mostrar_mapa_interactivo(texto_markmap, height=550):
                 background-color: #ffffff;
             }}
             #mindmap {{
-                width: 100%;
-                height: 100%;
+                width: 100vw;
+                height: 100vh;
                 display: block;
             }}
-            /* Asegura visibilidad y tipografía limpia en los nodos SVG */
             .markmap-node text {{
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
                 font-size: 14px !important;
                 fill: #1f2937 !important;
             }}
         </style>
-        <!-- Librerías con soporte completo para transform y estilos -->
         <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
         <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4/dist/browser/index.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4/dist/index.js"></script>
@@ -38,15 +37,16 @@ def mostrar_mapa_interactivo(texto_markmap, height=550):
     <body>
         <svg id="mindmap"></svg>
         <script>
-            document.addEventListener("DOMContentLoaded", async () => {{
+            document.addEventListener("DOMContentLoaded", () => {{
                 try {{
                     const {{ Transformer, Markmap, loadCSS, loadJS }} = window.markmap;
-                    const markdownText = {markdown_json};
+                    
+                    // Decodificamos de forma segura el texto desde Base64
+                    const markdownText = decodeURIComponent(escape(atob("{b64_markdown}")));
                     
                     const transformer = new Transformer();
                     const {{ root, features }} = transformer.transform(markdownText);
                     
-                    // Cargar estilos y scripts requeridos por el contenido transformado
                     const {{ styles, scripts }} = transformer.getUsedAssets(features);
                     if (styles) loadCSS(styles);
                     if (scripts) loadJS(scripts, {{ getMarkmap: () => window.markmap }});
@@ -56,16 +56,14 @@ def mostrar_mapa_interactivo(texto_markmap, height=550):
                         duration: 300
                     }}, root);
                     
-                    // Reajustar centrado tras inyectar fuentes y estilos
+                    // Forzar encuadre de zoom tras renderizar los nodos
                     setTimeout(() => {{
                         mm.fit();
-                    }}, 300);
+                    }}, 250);
                     
-                    window.addEventListener('resize', () => {{
-                        mm.fit();
-                    }});
+                    window.addEventListener('resize', () => mm.fit());
                 }} catch (e) {{
-                    console.error("Error al renderizar Markmap:", e);
+                    console.error("Error cargando Markmap:", e);
                 }}
             }});
         </script>
