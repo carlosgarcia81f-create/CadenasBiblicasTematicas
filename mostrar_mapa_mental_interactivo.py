@@ -2,9 +2,6 @@ import json
 import streamlit.components.v1 as components
 
 def mostrar_mapa_interactivo(texto_markmap, height=550):
-    # Convierte el string de Python a una cadena JSON válida y segura para JS
-    markdown_json = json.dumps(texto_markmap)
-    
     html_code = f"""
     <!DOCTYPE html>
     <html>
@@ -14,32 +11,53 @@ def mostrar_mapa_interactivo(texto_markmap, height=550):
             html, body {{
                 margin: 0;
                 padding: 0;
-                width: 100%;
-                height: 100%;
+                width: 100vw;
+                height: 100vh;
                 overflow: hidden;
                 background-color: #ffffff;
             }}
-            .markmap {{
-                width: 100%;
-                height: 100%;
+            #mindmap {{
+                width: 100vw;
+                height: 100vh;
+                display: block;
             }}
         </style>
-        <!-- Configuración de Markmap para ajustar vista automáticamente -->
-        <script>
-            window.markmap = {{
-                autoFit: true,
-                duration: 300
-            }};
-        </script>
-        <!-- Carga de scripts oficiales auto-contenidos -->
-        <script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.15.4"></script>
+        <!-- Carga de scripts de Markmap y D3 -->
+        <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+        <script src="https://cdn.jsdelivr.net/npm/markmap-lib@0.15.4"></script>
+        <script src="https://cdn.jsdelivr.net/npm/markmap-view@0.15.4"></script>
     </head>
     <body>
-        <div class="markmap">
-            <script type="text/template">
-                {texto_markmap}
-            </script>
-        </div>
+        <svg id="mindmap"></svg>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {{
+                try {{
+                    const {{ Transformer, Markmap }} = window.markmap;
+                    const markdownText = {json.dumps(texto_markmap)};
+                    
+                    const transformer = new Transformer();
+                    const {{ root }} = transformer.transform(markdownText);
+                    
+                    // Configuración de visualización e inicialización
+                    const mm = Markmap.create('#mindmap', {{
+                        initialExpandLevel: 3,
+                        duration: 300
+                    }}, root);
+                    
+                    // Reajustar encuadre y zoom automáticamente tras renderizar
+                    setTimeout(() => {{
+                        mm.fit();
+                    }}, 200);
+                    
+                    // Escuchar redimensionamiento de ventana
+                    window.addEventListener('resize', () => {{
+                        mm.fit();
+                    }});
+                }} catch (e) {{
+                    console.error("Error al cargar Markmap:", e);
+                }}
+            }});
+        </script>
     </body>
     </html>
     """
