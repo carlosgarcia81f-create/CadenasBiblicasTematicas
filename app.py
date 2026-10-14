@@ -69,264 +69,173 @@ def cargar_datos():
         return None
 
 df = cargar_datos()
-
-def cargar_proverbios(sheet_id, nombre_pestaña="BD_PROVERBIOS"):
-    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={nombre_pestaña}"
-    df_prov = pd.read_csv(url)
-    
-    # Limpiamos nombres de columnas quitando espacios extras
-    df_prov.columns = df_prov.columns.str.strip()
-    
-    # 1. Fijar el libro como Proverbios
-    df_prov['Libro'] = 'Proverbios'
-    
-    # 2. Extraer Capítulo y Versículo desde la columna 'Cita' (ej. "Proverbios 1 : 1")
-    def extraer_cap_verso(cita):
-        match = re.search(r'(\d+)\s*:\s*(\d+)', str(cita))
-        if match:
-            return int(match.group(1)), match.group(2)
-        return None, None
-
-    res = df_prov['Cita'].apply(extraer_cap_verso)
-    df_prov['Capítulo'] = [r[0] for r in res]
-    df_prov['Versículo'] = [r[1] for r in res]
-    
-    # 3. Mapear nombres para homologar con tu otra base de datos
-    df_prov['Texto_Verso'] = df_prov['Texto']
-    df_prov['Tema_Principal'] = df_prov['Categoría'] # O 'Tema' según prefieras
-    df_prov['Subtema'] = df_prov['Tema']
-    df_prov['Ideas'] = "" # Columna vacía para mantener compatibilidad
-    
-    return df_prov
-# Cargar la base principal
-df_principal = cargar_datos()
-
-# Cargar la base de proverbios (asumiendo que está en el mismo Google Sheet)
-# Nota: asegúrate de manejar el caso donde cargar_proverbios pueda fallar
-df_proverbios = cargar_proverbios(SHEET_ID, "BD_PROVERBIOS") 
-
-# Unir ambas bases en un solo DataFrame 'df'
-if df_principal is not None and df_proverbios is not None:
-     # pd.concat une las filas de ambas tablas. ignore_index=True resetea la numeración.
-    df = pd.concat([df_principal, df_proverbios], ignore_index=True)
-elif df_principal is not None:
-    df = df_principal
-else:
-    df = None
-
-# Creamos dos pestañas principales en la app
-tab_temas, tab_libros = st.tabs(["📖 Estudios Temáticos", "📚 Explorador por Libro y Capítulo"])
+### Hasta aquí ok 1 
 
 # =====================================================================
-# PESTAÑA 1: ESTUDIOS TEMÁTICOS (Tu vista actual)
+# 2. LÓGICA DE FILTROS (SOPORTE PARA MÚLTIPLES CATEGORÍAS POR FILA)
 # =====================================================================
-with tab_temas:
-    # Aquí va todo tu código actual de filtrado por Categoría, Tema, Markmap, PDF, etc.
-    
+if df is not None:
+    st.title("📖 Sistema de Cadenas Devocionales")
+    st.write("Herramienta de estudio bíblico personalizado para el discipulado.")
 
-    # =====================================================================
-    # 2. LÓGICA DE FILTROS (SOPORTE PARA MÚLTIPLES CATEGORÍAS POR FILA)
-    # =====================================================================
-    if df is not None:
-        st.title("📖 Sistema de Cadenas Devocionales")
-        st.write("Herramienta de estudio bíblico personalizado para el discipulado.")
+    # Botón de recarga manual para ti y tus colaboradores
+    if st.sidebar.button("🔄 Actualizar datos de Google Sheets"):
+        st.cache_data.clear()
+        st.rerun()
+
+    st.sidebar.header("🔍 Navegación")
     
-        # Botón de recarga manual para ti y tus colaboradores
-        if st.sidebar.button("🔄 Actualizar datos de Google Sheets"):
-            st.cache_data.clear()
-            st.rerun()
-    
-        st.sidebar.header("🔍 Navegación")
+    # Manejo de la columna 'Categoría' o 'Categoría' (con o sin acento)
+    col_cat = [col for col in df.columns if 'Categor' in col]
+    nombre_col_cat = col_cat[0] if col_cat else None
+
+    df_filtrado = df.copy()
+
+    if nombre_col_cat and df[nombre_col_cat].notna().any():
+        # Extraemos todas las etiquetas individuales separando por salto de línea (\n) o comas
+        raw_categorias = df[nombre_col_cat].dropna().astype(str).tolist()
         
-        # Manejo de la columna 'Categoría' o 'Categoría' (con o sin acento)
-        col_cat = [col for col in df.columns if 'Categor' in col]
-        nombre_col_cat = col_cat[0] if col_cat else None
-    
-        df_filtrado = df.copy()
-    
-        if nombre_col_cat and df[nombre_col_cat].notna().any():
-            # Extraemos todas las etiquetas individuales separando por salto de línea (\n) o comas
-            raw_categorias = df[nombre_col_cat].dropna().astype(str).tolist()
-            
-            lista_categorias = set()
-            for celda in raw_categorias:
-                # Separa por saltos de línea o comas
-                items = [item.strip() for item in celda.replace('\r', '').split('\n') if item.strip()]
-                for item in items:
-                    # Si una celda venía separada por comas dentro del texto
-                    sub_items = [s.strip() for s in item.split(',') if s.strip()]
-                    lista_categorias.update(sub_items)
-    
-            categorias_unicas = ["Todas"] + sorted(list(lista_categorias))
-            cat_seleccionada = st.sidebar.selectbox("Selecciona una Categoría:", categorias_unicas)
-            
-            # Filtrado flexible: Busca si la categoría seleccionada está dentro del texto de la celda
-            if cat_seleccionada != "Todas":
-                df_filtrado = df[df[nombre_col_cat].fillna('').astype(str).str.contains(cat_seleccionada, regex=False)]
-    
-        # Filtro dinámico de Temas Principales según la Categoría elegida
-        lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
-        tema_seleccionado = st.sidebar.selectbox("Selecciona un Tema de Estudio:", lista_temas)
-    
+        lista_categorias = set()
+        for celda in raw_categorias:
+            # Separa por saltos de línea o comas
+            items = [item.strip() for item in celda.replace('\r', '').split('\n') if item.strip()]
+            for item in items:
+                # Si una celda venía separada por comas dentro del texto
+                sub_items = [s.strip() for s in item.split(',') if s.strip()]
+                lista_categorias.update(sub_items)
+
+        categorias_unicas = ["Todas"] + sorted(list(lista_categorias))
+        cat_seleccionada = st.sidebar.selectbox("Selecciona una Categoría:", categorias_unicas)
+        
+        # Filtrado flexible: Busca si la categoría seleccionada está dentro del texto de la celda
+        if cat_seleccionada != "Todas":
+            df_filtrado = df[df[nombre_col_cat].fillna('').astype(str).str.contains(cat_seleccionada, regex=False)]
+
+    # Filtro dinámico de Temas Principales según la Categoría elegida
+    lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
+    tema_seleccionado = st.sidebar.selectbox("Selecciona un Tema de Estudio:", lista_temas)
+
+    # =====================================================================
+    # 3. RENDERIZADO DEL ESTUDIO
+    # =====================================================================
+    if tema_seleccionado:
+        # Recuperamos todos los pasajes del tema seleccionado (filtrando por la llave ID_REF / ID_RI)
+        col_id = 'ID_REF' if 'ID_REF' in df.columns else 'ID_RI'
+        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=[col_id])
+        
+        st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
+        st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
+        
+       
         # =====================================================================
-        # 3. RENDERIZADO DEL ESTUDIO
+        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
         # =====================================================================
-        if tema_seleccionado:
-            # Recuperamos todos los pasajes del tema seleccionado (filtrando por la llave ID_REF / ID_RI)
-            col_id = 'ID_REF' if 'ID_REF' in df.columns else 'ID_RI'
-            resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=[col_id])
+        for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
+            subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
+            st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
             
-            st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
-            st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
+            # Aseguramos limpiar espacios en blanco extras de toda la columna 'Ideas' para evitar duplicados visuales
+            grupo_subtema['Ideas'] = grupo_subtema['Ideas'].astype(str).str.strip()
             
-           
-            # =====================================================================
-            # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
-            # =====================================================================
-            for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
-                subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
-                st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
+            # Separar versos que tienen una idea asociada de los que no (filtramos los "nan" o vacíos)
+            con_idea = grupo_subtema[(grupo_subtema['Ideas'].notna()) & (grupo_subtema['Ideas'] != "") & (grupo_subtema['Ideas'] != "nan")]
+            sin_idea = grupo_subtema[(grupo_subtema['Ideas'].isna()) | (grupo_subtema['Ideas'] == "") | (grupo_subtema['Ideas'] == "nan")]
+            
+            # -----------------------------------------------------------------
+            # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
+            # -----------------------------------------------------------------
+            idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
+            
+            for _, fila in con_idea.iterrows():
+                idea_fila = fila['Ideas'] # Ya viene limpia de la línea anterior
                 
-                # Aseguramos limpiar espacios en blanco extras de toda la columna 'Ideas' para evitar duplicados visuales
-                grupo_subtema['Ideas'] = grupo_subtema['Ideas'].astype(str).str.strip()
+                # EFECTÚA EL AUTOAGRUPAMIENTO: Compara de forma estricta textos limpios
+                if idea_fila != idea_actual:
+                    idea_actual = idea_fila
+                    st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
-                # Separar versos que tienen una idea asociada de los que no (filtramos los "nan" o vacíos)
-                con_idea = grupo_subtema[(grupo_subtema['Ideas'].notna()) & (grupo_subtema['Ideas'] != "") & (grupo_subtema['Ideas'] != "nan")]
-                sin_idea = grupo_subtema[(grupo_subtema['Ideas'].isna()) | (grupo_subtema['Ideas'] == "") | (grupo_subtema['Ideas'] == "nan")]
+                # Datos del pasaje
+                cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
+                texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
                 
-                # -----------------------------------------------------------------
-                # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
-                # -----------------------------------------------------------------
-                idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
+                # Renderiza el versículo
+                st.markdown(f"""
+                    <div class="verso-contenedor-idea">
+                        <span class="cita">📖 {cita}</span> — {texto_verso}
+                    </div>
+                """, unsafe_allow_html=True)
                 
-                for _, fila in con_idea.iterrows():
-                    idea_fila = fila['Ideas'] # Ya viene limpia de la línea anterior
-                    
-                    # EFECTÚA EL AUTOAGRUPAMIENTO: Compara de forma estricta textos limpios
-                    if idea_fila != idea_actual:
-                        idea_actual = idea_fila
-                        st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
-                    
-                    # Datos del pasaje
+            # -----------------------------------------------------------------
+            # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
+            # -----------------------------------------------------------------
+            if not sin_idea.empty:
+                if not con_idea.empty:
+                    st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
+                
+                for _, fila in sin_idea.iterrows():
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                     texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
                     
-                    # Renderiza el versículo
                     st.markdown(f"""
-                        <div class="verso-contenedor-idea">
+                        <div class="verso-contenedor">
                             <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allow_html=True)
-                    
-                # -----------------------------------------------------------------
-                # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
-                # -----------------------------------------------------------------
-                if not sin_idea.empty:
-                    if not con_idea.empty:
-                        st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
-                    
-                    for _, fila in sin_idea.iterrows():
-                        cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                        texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
-                        
-                        st.markdown(f"""
-                            <div class="verso-contenedor">
-                                <span class="cita">📖 {cita}</span> — {texto_verso}
-                            </div>
-                        """, unsafe_allow_html=True)
-    if tema_seleccionado:
-        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
-        
-        # -----------------------------------------------------------------
-        # BOTONES DE DESCARGA (PDF Carta e HTML Móvil)
-        # -----------------------------------------------------------------
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Opción 1: PDF para Impresión
-            bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
-            st.download_button(
-                label="📄 PDF para Imprimir (Carta)",
-                data=bytes_pdf,
-                file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-            
-        with col2:
-            # Opción 2: HTML Responsivo para Móvil
-            bytes_html = crear_html_estudio(resultado, tema_seleccionado)
-            st.download_button(
-                label="📱 Versión Móvil (.html)",
-                data=bytes_html,
-                file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}_movil.html",
-                mime="text/html",
-                use_container_width=True
-            )
+if tema_seleccionado:
+    resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
     
-        # -----------------------------------------------------------------
-        # SECCIÓN: EXPORTAR A NOTION
-        # -----------------------------------------------------------------
-        with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
-            texto_markdown = generar_markdown(resultado, tema_seleccionado)
-            
-            st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
-            st.code(texto_markdown, language="markdown")
-        # -----------------------------------------------------------------
-        # SECCIÓN: MARKMAP (MAPA MENTAL EXPORTABLE Y DESCARGABLE)
-        # -----------------------------------------------------------------
-        with st.expander("🧠 Mapa Mental del Estudio (Descarga e Integración)", expanded=False):
-            st.write("Genera un mapa mental jerárquico que inicia mostrando hasta las **Ideas (Nivel 3)** con ramas de múltiples colores.")
-            
-            texto_markmap = generar_markmap(resultado, tema_seleccionado)
-            html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
-            nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
-            
-            # Botón de descarga directa del HTML interactivo
-            st.download_button(
-                label="🌐 Descargar Mapa Mental Interactivo (.html)",
-                data=html_mapa,
-                file_name=nombre_archivo_mapa,
-                mime="text/html"
-            )
-            
-            
-            
-            st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
-            st.code(texto_markmap, language="markdown")
-            pass
+    # -----------------------------------------------------------------
+    # BOTONES DE DESCARGA (PDF Carta e HTML Móvil)
+    # -----------------------------------------------------------------
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Opción 1: PDF para Impresión
+        bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
+        st.download_button(
+            label="📄 PDF para Imprimir (Carta)",
+            data=bytes_pdf,
+            file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+        
+    with col2:
+        # Opción 2: HTML Responsivo para Móvil
+        bytes_html = crear_html_estudio(resultado, tema_seleccionado)
+        st.download_button(
+            label="📱 Versión Móvil (.html)",
+            data=bytes_html,
+            file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}_movil.html",
+            mime="text/html",
+            use_container_width=True
+        )
 
-# =====================================================================
-# PESTAÑA 2: EXPLORADOR POR LIBRO Y CAPÍTULO (Nueva Funcionalidad)
-# =====================================================================
-with tab_libros:
-    if df is not None:
-        st.title("📚 Explorador por Libro y Capítulo")
+    # -----------------------------------------------------------------
+    # SECCIÓN: EXPORTAR A NOTION
+    # -----------------------------------------------------------------
+    with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
+        texto_markdown = generar_markdown(resultado, tema_seleccionado)
         
-        # Filtro 1: Seleccionar Libro
-        # dropna() evita errores si hay filas vacías, unique() obtiene libros sin repetir
-        libros_disponibles = df['Libro'].dropna().unique() 
-        libro_sel = st.selectbox("Selecciona un Libro:", sorted(libros_disponibles))
+        st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
+        st.code(texto_markdown, language="markdown")
+    # -----------------------------------------------------------------
+    # SECCIÓN: MARKMAP (MAPA MENTAL EXPORTABLE Y DESCARGABLE)
+    # -----------------------------------------------------------------
+    with st.expander("🧠 Mapa Mental del Estudio (Descarga e Integración)", expanded=False):
+        st.write("Genera un mapa mental jerárquico que inicia mostrando hasta las **Ideas (Nivel 3)** con ramas de múltiples colores.")
         
-        if libro_sel:
-            # Filtramos el df solo para el libro seleccionado
-            df_libro = df[df['Libro'] == libro_sel]
-            
-            # Filtro 2: Seleccionar Capítulo
-            # Convertimos a entero para ordenar numéricamente (1, 2, 3... y no 1, 10, 11, 2)
-            capitulos_disponibles = sorted(df_libro['Capítulo'].dropna().astype(int).unique())
-            capitulo_sel = st.selectbox("Selecciona un Capítulo:", capitulos_disponibles)
-            
-            if capitulo_sel:
-                # Filtramos para obtener solo los versículos de ese capítulo
-                df_capitulo = df_libro[df_libro['Capítulo'].astype(int) == capitulo_sel]
-                
-                # Ordenar por versículo
-                df_capitulo['Versículo_Num'] = df_capitulo['Versículo'].astype(int)
-                df_capitulo = df_capitulo.sort_values('Versículo_Num')
-                
-                st.write(f"### {libro_sel} {capitulo_sel}")
-                
-                # Mostrar los versículos
-                for _, fila in df_capitulo.iterrows():
-                    st.markdown(f"**{fila['Versículo']}** {fila['Texto_Verso']}")
+        texto_markmap = generar_markmap(resultado, tema_seleccionado)
+        html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
+        nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
+        
+        # Botón de descarga directa del HTML interactivo
+        st.download_button(
+            label="🌐 Descargar Mapa Mental Interactivo (.html)",
+            data=html_mapa,
+            file_name=nombre_archivo_mapa,
+            mime="text/html"
+        )
+        
+        st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
+        st.code(texto_markmap, language="markdown")
