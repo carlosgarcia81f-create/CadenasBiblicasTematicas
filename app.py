@@ -70,6 +70,35 @@ def cargar_datos():
 
 df = cargar_datos()
 
+def cargar_proverbios(sheet_id, nombre_pestaña="BD_PROVERBIOS"):
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet={nombre_pestaña}"
+    df_prov = pd.read_csv(url)
+    
+    # Limpiamos nombres de columnas quitando espacios extras
+    df_prov.columns = df_prov.columns.str.strip()
+    
+    # 1. Fijar el libro como Proverbios
+    df_prov['Libro'] = 'Proverbios'
+    
+    # 2. Extraer Capítulo y Versículo desde la columna 'Cita' (ej. "Proverbios 1 : 1")
+    def extraer_cap_verso(cita):
+        match = re.search(r'(\d+)\s*:\s*(\d+)', str(cita))
+        if match:
+            return int(match.group(1)), match.group(2)
+        return None, None
+
+    res = df_prov['Cita'].apply(extraer_cap_verso)
+    df_prov['Capítulo'] = [r[0] for r in res]
+    df_prov['Versículo'] = [r[1] for r in res]
+    
+    # 3. Mapear nombres para homologar con tu otra base de datos
+    df_prov['Texto_Verso'] = df_prov['Texto']
+    df_prov['Tema_Principal'] = df_prov['Categoría'] # O 'Tema' según prefieras
+    df_prov['Subtema'] = df_prov['Tema']
+    df_prov['Ideas'] = "" # Columna vacía para mantener compatibilidad
+    
+    return df_prov
+
 # Creamos dos pestañas principales en la app
 tab_temas, tab_libros = st.tabs(["📖 Estudios Temáticos", "📚 Explorador por Libro y Capítulo"])
 
