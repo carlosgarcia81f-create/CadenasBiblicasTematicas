@@ -69,7 +69,16 @@ def cargar_datos():
         return None
 
 df = cargar_datos()
-### Hasta aquí ok 1 
+
+# Creamos dos pestañas principales en la app
+tab_temas, tab_libros = st.tabs(["📖 Estudios Temáticos", "📚 Explorador por Libro y Capítulo"])
+
+# =====================================================================
+# PESTAÑA 1: ESTUDIOS TEMÁTICOS (Tu vista actual)
+# =====================================================================
+with tab_temas:
+    # Aquí va todo tu código actual de filtrado por Categoría, Tema, Markmap, PDF, etc.
+    
 
 # =====================================================================
 # 2. LÓGICA DE FILTROS (SOPORTE PARA MÚLTIPLES CATEGORÍAS POR FILA)
@@ -237,5 +246,72 @@ if tema_seleccionado:
             mime="text/html"
         )
         
+        
+        
         st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
         st.code(texto_markmap, language="markdown")
+        pass
+
+# =====================================================================
+# PESTAÑA 2: EXPLORADOR POR LIBRO Y CAPÍTULO (Nueva Funcionalidad)
+# =====================================================================
+with tab_libros:
+    st.header("🔎 Explorador de Temas por Libro Bíblico")
+    st.write("Selecciona un libro y un capítulo para ver todos los temas, subtemas e ideas identificados en ese pasaje.")
+
+    # 1. Selector de Libro
+    libros_disponibles = sorted(df['Libro'].dropna().unique())
+    libro_sel = st.selectbox("Selecciona un Libro:", libros_disponibles, index=0)
+
+    if libro_sel:
+        # Filtrar datos por el libro elegido
+        df_libro = df[df['Libro'] == libro_sel]
+
+        # 2. Selector de Capítulo
+        # Aseguramos que los capítulos sean ordenados numéricamente
+        capitulos = sorted(df_libro['Capítulo'].unique(), key=lambda x: int(x) if str(x).isdigit() else x)
+        cap_sel = st.selectbox(f"Selecciona un Capítulo de {libro_sel}:", ["Todos los capítulos"] + [f"Capítulo {c}" for c in capitulos])
+
+        # Filtrar por capítulo si no seleccionó "Todos"
+        if cap_sel != "Todos los capítulos":
+            num_cap = cap_sel.replace("Capítulo ", "")
+            df_pasajes = df_libro[df_libro['Capítulo'].astype(str) == str(num_cap)]
+        else:
+            df_pasajes = df_libro.copy()
+
+        # 3. Muestra de Resumen y Métricas
+        st.markdown("---")
+        
+        # Obtenemos los temas únicos identificados en esta selección
+        temas_encontrados = df_pasajes['Tema_Principal'].dropna().unique()
+        
+        col1, col2 = st.columns(2)
+        col1.metric("Pasajes / Versículos Registrados", len(df_pasajes))
+        col2.metric("Temas Identificados", len(temas_encontrados))
+
+        # Muestra una pequeña lista / etiquetas de los temas presentes
+        st.subheader(f"📌 Temas identificados en {libro_sel} {cap_sel if cap_sel != 'Todos los capítulos' else ''}")
+        st.write(", ".join([f"**`{t}`**" for t in temas_encontrados]))
+
+        st.markdown("### 📜 Detalle de Pasajes y Temas")
+
+        # 4. Despliegue interactivo agrupado por Capítulo y Versículo
+        for cap, df_cap in df_pasajes.groupby('Capítulo', sort=False):
+            st.markdown(f"#### 📗 {libro_sel} Capítulo {cap}")
+            
+            for _, fila in df_cap.iterrows():
+                cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
+                tema = fila['Tema_Principal']
+                subtema = fila.get('Subtema', '')
+                idea = fila.get('Ideas', '')
+                texto = fila['Texto_Verso']
+                
+                # Tarjeta visual interactiva para cada versículo
+                with st.expander(f"📖 **{cita}** — Tema: *{tema}*", expanded=True):
+                    st.markdown(f"**Texto:** {texto}")
+                    
+                    # Detalles del tema al que pertenece este versículo
+                    st.caption(f"🏷️ **Categoría / Tema:** {tema}  |  **Subtema:** {subtema}  |  **Idea:** {idea}")
+                    
+                    if 'Notas' in fila and pd.notna(fila['Notas']) and str(fila['Notas']).strip() != "":
+                        st.info(f"💡 **Nota:** {fila['Notas']}")
