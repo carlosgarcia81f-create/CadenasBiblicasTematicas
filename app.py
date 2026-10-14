@@ -106,13 +106,13 @@ df_principal = cargar_datos()
 df_proverbios = cargar_proverbios(SHEET_ID, "BD_PROVERBIOS") 
 
 # Unir ambas bases en un solo DataFrame 'df'
-if df_principal is not None and df_proverbios is not None:
-    # pd.concat une las filas de ambas tablas. ignore_index=True resetea la numeración.
-    df = pd.concat([df_principal, df_proverbios], ignore_index=True)
-elif df_principal is not None:
-    df = df_principal
-else:
-    df = None
+    if df_principal is not None and df_proverbios is not None:
+        # pd.concat une las filas de ambas tablas. ignore_index=True resetea la numeración.
+        df = pd.concat([df_principal, df_proverbios], ignore_index=True)
+    elif df_principal is not None:
+        df = df_principal
+    else:
+        df = None
 
 # Creamos dos pestañas principales en la app
 tab_temas, tab_libros = st.tabs(["📖 Estudios Temáticos", "📚 Explorador por Libro y Capítulo"])
