@@ -98,6 +98,21 @@ def cargar_proverbios(sheet_id, nombre_pestaña="BD_PROVERBIOS"):
     df_prov['Ideas'] = "" # Columna vacía para mantener compatibilidad
     
     return df_prov
+# Cargar la base principal
+df_principal = cargar_datos()
+
+# Cargar la base de proverbios (asumiendo que está en el mismo Google Sheet)
+# Nota: asegúrate de manejar el caso donde cargar_proverbios pueda fallar
+df_proverbios = cargar_proverbios(SHEET_ID, "BD_PROVERBIOS") 
+
+# Unir ambas bases en un solo DataFrame 'df'
+if df_principal is not None and df_proverbios is not None:
+    # pd.concat une las filas de ambas tablas. ignore_index=True resetea la numeración.
+    df = pd.concat([df_principal, df_proverbios], ignore_index=True)
+elif df_principal is not None:
+    df = df_principal
+else:
+    df = None
 
 # Creamos dos pestañas principales en la app
 tab_temas, tab_libros = st.tabs(["📖 Estudios Temáticos", "📚 Explorador por Libro y Capítulo"])
@@ -285,62 +300,33 @@ if tema_seleccionado:
 # PESTAÑA 2: EXPLORADOR POR LIBRO Y CAPÍTULO (Nueva Funcionalidad)
 # =====================================================================
 with tab_libros:
-    st.header("🔎 Explorador de Temas por Libro Bíblico")
-    st.write("Selecciona un libro y un capítulo para ver todos los temas, subtemas e ideas identificados en ese pasaje.")
-
-    # 1. Selector de Libro
-    libros_disponibles = sorted(df['Libro'].dropna().unique())
-    libro_sel = st.selectbox("Selecciona un Libro:", libros_disponibles, index=0)
-
-    if libro_sel:
-        # Filtrar datos por el libro elegido
-        df_libro = df[df['Libro'] == libro_sel]
-
-        # 2. Selector de Capítulo
-        # Aseguramos que los capítulos sean ordenados numéricamente
-        capitulos = sorted(df_libro['Capítulo'].unique(), key=lambda x: int(x) if str(x).isdigit() else x)
-        cap_sel = st.selectbox(f"Selecciona un Capítulo de {libro_sel}:", ["Todos los capítulos"] + [f"Capítulo {c}" for c in capitulos])
-
-        # Filtrar por capítulo si no seleccionó "Todos"
-        if cap_sel != "Todos los capítulos":
-            num_cap = cap_sel.replace("Capítulo ", "")
-            df_pasajes = df_libro[df_libro['Capítulo'].astype(str) == str(num_cap)]
-        else:
-            df_pasajes = df_libro.copy()
-
-        # 3. Muestra de Resumen y Métricas
-        st.markdown("---")
+    if df is not None:
+        st.title("📚 Explorador por Libro y Capítulo")
         
-        # Obtenemos los temas únicos identificados en esta selección
-        temas_encontrados = df_pasajes['Tema_Principal'].dropna().unique()
+        # Filtro 1: Seleccionar Libro
+        # dropna() evita errores si hay filas vacías, unique() obtiene libros sin repetir
+        libros_disponibles = df['Libro'].dropna().unique() 
+        libro_sel = st.selectbox("Selecciona un Libro:", sorted(libros_disponibles))
         
-        col1, col2 = st.columns(2)
-        col1.metric("Pasajes / Versículos Registrados", len(df_pasajes))
-        col2.metric("Temas Identificados", len(temas_encontrados))
-
-        # Muestra una pequeña lista / etiquetas de los temas presentes
-        st.subheader(f"📌 Temas identificados en {libro_sel} {cap_sel if cap_sel != 'Todos los capítulos' else ''}")
-        st.write(", ".join([f"**`{t}`**" for t in temas_encontrados]))
-
-        st.markdown("### 📜 Detalle de Pasajes y Temas")
-
-        # 4. Despliegue interactivo agrupado por Capítulo y Versículo
-        for cap, df_cap in df_pasajes.groupby('Capítulo', sort=False):
-            st.markdown(f"#### 📗 {libro_sel} Capítulo {cap}")
+        if libro_sel:
+            # Filtramos el df solo para el libro seleccionado
+            df_libro = df[df['Libro'] == libro_sel]
             
-            for _, fila in df_cap.iterrows():
-                cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                tema = fila['Tema_Principal']
-                subtema = fila.get('Subtema', '')
-                idea = fila.get('Ideas', '')
-                texto = fila['Texto_Verso']
+            # Filtro 2: Seleccionar Capítulo
+            # Convertimos a entero para ordenar numéricamente (1, 2, 3... y no 1, 10, 11, 2)
+            capitulos_disponibles = sorted(df_libro['Capítulo'].dropna().astype(int).unique())
+            capitulo_sel = st.selectbox("Selecciona un Capítulo:", capitulos_disponibles)
+            
+            if capitulo_sel:
+                # Filtramos para obtener solo los versículos de ese capítulo
+                df_capitulo = df_libro[df_libro['Capítulo'].astype(int) == capitulo_sel]
                 
-                # Tarjeta visual interactiva para cada versículo
-                with st.expander(f"📖 **{cita}** — Tema: *{tema}*", expanded=True):
-                    st.markdown(f"**Texto:** {texto}")
-                    
-                    # Detalles del tema al que pertenece este versículo
-                    st.caption(f"🏷️ **Categoría / Tema:** {tema}  |  **Subtema:** {subtema}  |  **Idea:** {idea}")
-                    
-                    if 'Notas' in fila and pd.notna(fila['Notas']) and str(fila['Notas']).strip() != "":
-                        st.info(f"💡 **Nota:** {fila['Notas']}")
+                # Ordenar por versículo
+                df_capitulo['Versículo_Num'] = df_capitulo['Versículo'].astype(int)
+                df_capitulo = df_capitulo.sort_values('Versículo_Num')
+                
+                st.write(f"### {libro_sel} {capitulo_sel}")
+                
+                # Mostrar los versículos
+                for _, fila in df_capitulo.iterrows():
+                    st.markdown(f"**{fila['Versículo']}** {fila['Texto_Verso']}")
