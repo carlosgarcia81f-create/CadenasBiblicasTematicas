@@ -154,16 +154,23 @@ if df is not None:
                     idea_actual = idea_fila
                     st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
-                # Datos del pasaje
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
+                texto_verso = fila['Texto_Verso']
                 
-                # Renderiza el versículo
+                # 1. Renderizado principal del versículo
                 st.markdown(f"""
-                    <div class="verso-contenedor-idea">
+                    <div class="verso-contenedor">
                         <span class="cita">📖 {cita}</span> — {texto_verso}
                     </div>
                 """, unsafe_allow_html=True)
+                
+                # 2. Desplegable opcional de Notas personales
+                if 'Notas' in fila and pd.notna(fila['Notas']):
+                    nota_texto = str(fila['Notas']).strip()
+                    # Verificamos que no sea un string vacío o valores 'nan' / 'none'
+                    if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
+                        with st.expander("💡 Ver nota / explicación personal", expanded=False):
+                            st.info(nota_texto)
                 
             # -----------------------------------------------------------------
             # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
