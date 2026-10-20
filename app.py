@@ -175,12 +175,19 @@ if df is not None:
                 for _, fila in sin_idea.iterrows():
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                     texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
-                    
+                # 1. Renderizado principal del versículo    
                     st.markdown(f"""
                         <div class="verso-contenedor">
                             <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allow_html=True)
+                ## 2. Desplegable opcional de Notas
+                    if 'Notas' in fila and pd.notna(fila['Notas']):
+                        nota_texto = str(fila['Notas']).strip()
+                        # Filtramos valores vacíos o nulos
+                        if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
+                            with st.expander("💡 Ver nota / explicación personal", expanded=False):
+                                st.info(nota_texto)    
 if tema_seleccionado:
     resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
     
