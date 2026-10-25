@@ -69,7 +69,6 @@ def cargar_datos():
         return None
 
 df = cargar_datos()
-### Hasta aquí ok 1 
 
 # =====================================================================
 # 2. LÓGICA DE FILTROS (SOPORTE PARA MÚLTIPLES CATEGORÍAS POR FILA)
@@ -106,13 +105,25 @@ if df is not None:
 
         categorias_unicas = ["Todas"] + sorted(list(lista_categorias))
         cat_seleccionada = st.sidebar.selectbox("Selecciona una Categoría:", categorias_unicas)
+
+                # Función para volver al inicio
+        def ir_a_inicio():
+            st.session_state.tema_actual = "🏠 Inicio"
+        
+        # Botón en el sidebar
+        st.sidebar.markdown("---") # Una línea divisoria para que se vea ordenado
+        st.sidebar.button("🏠 Volver a la Pantalla Inicial", on_click=ir_a_inicio, use_container_width=True)
         
         # Filtrado flexible: Busca si la categoría seleccionada está dentro del texto de la celda
         if cat_seleccionada != "Todas":
             df_filtrado = df[df[nombre_col_cat].fillna('').astype(str).str.contains(cat_seleccionada, regex=False)]
 
     # Filtro dinámico de Temas Principales según la Categoría elegida
-    lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
+    temas_extraidos = sorted(df_filtrado['Tema_Principal'].dropna().unique())
+    lista_temas = ["🏠 Inicio"] + temas_extraidos
+
+    
+    
     # Función callback para cuando se hace clic en una tarjeta
     def cambiar_tema(nuevo_tema):
         st.session_state.tema_actual = nuevo_tema
@@ -144,7 +155,7 @@ if df is not None:
     
     # --- RENDERIZADO VISUAL EN LA PANTALLA PRINCIPAL ---
     # Mostramos las novedades SOLO si no se ha seleccionado un tema específico para estudiar
-    if not tema_seleccionado or tema_seleccionado == lista_temas[0]: # Ajusta la condición según cómo inicie tu selectbox
+    if tema_seleccionado == "🏠 Inicio":
         st.markdown('<div class="tema-titulo">✨ Añadidos Recientemente</div>', unsafe_allow_html=True)
         
         # Creamos columnas para ponerlos como tarjetas una al lado de la otra
@@ -163,6 +174,10 @@ if df is not None:
                     # Botón de Streamlit que gatilla el cambio de tema
                     st.button("📖 Ver estudio", key=f"btn_{i}", on_click=cambiar_tema, args=(tema_reciente,), use_container_width=True)
 
+        else:
+            # Si el usuario eligió un tema (ya sea en el selectbox o dando clic a una tarjeta), 
+            # se muestra el estudio normal.
+            # ... (Aquí va todo tu código que renderiza los pasajes bíblicos, el markmap, pdf, etc.) ...
 
     
     # =====================================================================
