@@ -113,7 +113,25 @@ if df is not None:
 
     # Filtro dinámico de Temas Principales según la Categoría elegida
     lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
-    tema_seleccionado = st.sidebar.selectbox("Selecciona un Tema de Estudio:", lista_temas)
+    # Función callback para cuando se hace clic en una tarjeta
+    def cambiar_tema(nuevo_tema):
+        st.session_state.tema_actual = nuevo_tema
+    
+    # Inicializar la variable en el estado de sesión si no existe
+    if 'tema_actual' not in st.session_state:
+        st.session_state.tema_actual = lista_temas[0] if lista_temas else None
+    
+    # Asegurar que el tema guardado exista en la lista filtrada actual
+    index_tema = lista_temas.index(st.session_state.tema_actual) if st.session_state.tema_actual in lista_temas else 0
+    
+    # Selectbox vinculado al estado
+    tema_seleccionado = st.sidebar.selectbox(
+        "Selecciona un Tema de Estudio:", 
+        lista_temas,
+        index=index_tema
+    )
+    # Sincronizamos por si el usuario usa la barra lateral manualmente
+    st.session_state.tema_actual = tema_seleccionado
     #=====================================================================
     #2.1 Adición de Últimos temas publicados
     #=====================================================================
@@ -133,16 +151,17 @@ if df is not None:
         cols = st.columns(len(ultimos_temas))
         
         for i, tema_reciente in enumerate(ultimos_temas):
-            with cols[i]:
-                # Puedes agregar esta clase CSS en tu bloque de estilos inicial
-                st.markdown(f"""
-                <div style="background-color: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 10px; border-top: 4px solid #10B981; text-align: center; height: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <p style="color: #10B981; font-size: 12px; font-weight: bold; margin: 0;">NUEVO</p>
-                    <h4 style="color: #334155; margin-top: 5px;">{tema_reciente}</h4>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        st.write("---")
+                with cols[i]:
+                    # Dejamos solo el encabezado visual (quitamos el height 100% para que el botón embone bien)
+                    st.markdown(f"""
+                    <div style="background-color: rgba(16, 185, 129, 0.1); padding: 15px 15px 5px 15px; border-radius: 10px 10px 0 0; border-top: 4px solid #10B981; text-align: center;">
+                        <p style="color: #10B981; font-size: 12px; font-weight: bold; margin: 0;">NUEVO</p>
+                        <h4 style="color: #334155; margin-top: 5px; font-size: 16px;">{tema_reciente}</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Botón de Streamlit que gatilla el cambio de tema
+                    st.button("📖 Ver estudio", key=f"btn_{i}", on_click=cambiar_tema, args=(tema_reciente,), use_container_width=True)
 
 
     
