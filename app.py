@@ -4,6 +4,7 @@ from generador_pdf import crear_pdf_estudio
 from utilidades import limpiar_texto_biblico
 from generador_markdown import generar_markdown
 from generador_html import crear_html_estudio
+from generador_markmap import generar_markmap, crear_html_markmap
 
 # Configuración de la página web
 st.set_page_config(page_title="Mi Estudio Bíblico Devocional", page_icon="📖", layout="centered")
@@ -125,8 +126,7 @@ if df is not None:
         st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
         st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
         
-        # (Aquí continúa tu bucle groupby por 'Subtema' e 'Ideas' habitual...)
-        
+       
         # =====================================================================
         # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
         # =====================================================================
@@ -154,16 +154,23 @@ if df is not None:
                     idea_actual = idea_fila
                     st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
                 
-                # Datos del pasaje
                 cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
+                texto_verso = fila['Texto_Verso']
                 
-                # Renderiza el versículo
+                # 1. Renderizado principal del versículo
                 st.markdown(f"""
-                    <div class="verso-contenedor-idea">
+                    <div class="verso-contenedor">
                         <span class="cita">📖 {cita}</span> — {texto_verso}
                     </div>
                 """, unsafe_allow_html=True)
+                
+                # 2. Desplegable opcional de Notas personales
+                if 'Notas' in fila and pd.notna(fila['Notas']):
+                    nota_texto = str(fila['Notas']).strip()
+                    # Verificamos que no sea un string vacío o valores 'nan' / 'none'
+                    if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
+                        with st.expander("💡 Ver nota / explicación personal", expanded=False):
+                            st.info(nota_texto)
                 
             # -----------------------------------------------------------------
             # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
@@ -175,12 +182,19 @@ if df is not None:
                 for _, fila in sin_idea.iterrows():
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
                     texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
-                    
+                # 1. Renderizado principal del versículo    
                     st.markdown(f"""
                         <div class="verso-contenedor">
                             <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allow_html=True)
+                ## 2. Desplegable opcional de Notas
+                    if 'Notas' in fila and pd.notna(fila['Notas']):
+                        nota_texto = str(fila['Notas']).strip()
+                        # Filtramos valores vacíos o nulos
+                        if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
+                            with st.expander("💡 Ver nota / explicación personal", expanded=False):
+                                st.info(nota_texto)    
 if tema_seleccionado:
     resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
     
@@ -219,3 +233,23 @@ if tema_seleccionado:
         
         st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
         st.code(texto_markdown, language="markdown")
+    # -----------------------------------------------------------------
+    # SECCIÓN: MARKMAP (MAPA MENTAL EXPORTABLE Y DESCARGABLE)
+    # -----------------------------------------------------------------
+    with st.expander("🧠 Mapa Mental del Estudio (Descarga e Integración)", expanded=False):
+        st.write("Genera un mapa mental jerárquico que inicia mostrando hasta las **Ideas (Nivel 3)** con ramas de múltiples colores.")
+        
+        texto_markmap = generar_markmap(resultado, tema_seleccionado)
+        html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
+        nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
+        
+        # Botón de descarga directa del HTML interactivo
+        st.download_button(
+            label="🌐 Descargar Mapa Mental Interactivo (.html)",
+            data=html_mapa,
+            file_name=nombre_archivo_mapa,
+            mime="text/html"
+        )
+        
+        st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
+        st.code(texto_markmap, language="markdown")

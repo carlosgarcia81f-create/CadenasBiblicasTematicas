@@ -23,8 +23,11 @@ def generar_markdown(df_tema, nombre_tema):
                 md.append(f"> 📖 **{cita}** — {texto_verso}\n")
                 
                 # Si hay notas personales, se agregan como sub-bloque indented o cursiva
-                if 'Notas' in fila and pd.notna(fila['Notas']) and str(fila['Notas']).strip() != "":
-                    md.append(f"> *💡 Nota: {fila['Notas']}*\n")
+                # Condicional de Notas: solo si la celda tiene contenido real
+                if 'Notas' in fila and pd.notna(fila['Notas']):
+                    nota_texto = str(fila['Notas']).strip()
+                    if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
+                        md.append(f"> > 💡 **Nota:** *{nota_texto}*")
                     
                 md.append("") # Línea en blanco
                 
