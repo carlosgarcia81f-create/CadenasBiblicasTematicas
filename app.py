@@ -174,7 +174,7 @@ if df is not None:
                     # Botón de Streamlit que gatilla el cambio de tema
                     st.button("📖 Ver estudio", key=f"btn_{i}", on_click=cambiar_tema, args=(tema_reciente,), use_container_width=True)
 
-         else:
+          else:
             # Si el usuario eligió un tema (ya sea en el selectbox o dando clic a una tarjeta), 
             # se muestra el estudio normal.
             # ... (Aquí va todo tu código que renderiza los pasajes bíblicos, el markmap, pdf, etc.) ...
