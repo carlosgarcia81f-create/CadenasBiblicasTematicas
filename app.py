@@ -90,7 +90,7 @@ if df is not None:
     nombre_col_cat = col_cat[0] if col_cat else None
 
     df_filtrado = df.copy()
-
+    
     if nombre_col_cat and df[nombre_col_cat].notna().any():
         # Extraemos todas las etiquetas individuales separando por salto de línea (\n) o comas
         raw_categorias = df[nombre_col_cat].dropna().astype(str).tolist()
@@ -114,7 +114,38 @@ if df is not None:
     # Filtro dinámico de Temas Principales según la Categoría elegida
     lista_temas = sorted(df_filtrado['Tema_Principal'].dropna().unique())
     tema_seleccionado = st.sidebar.selectbox("Selecciona un Tema de Estudio:", lista_temas)
+    #=====================================================================
+    #2.1 Adición de Últimos temas publicados
+    #=====================================================================
+    # Filtramos para excluir cualquier fila cuya categoría contenga "Proceso"
+    df_publicados = df[~df[nombre_col_cat].fillna('').astype(str).str.contains("Proceso", case=False)]
+    
+    # Obtenemos los últimos 3 temas únicos basándonos en el orden de las filas
+    ultimos_temas = df_publicados['Tema_Principal'].dropna().drop_duplicates(keep='last').tail(3).tolist()
+    ultimos_temas.reverse() # Invertimos para que el más nuevo (última fila) salga primero
+    
+    # --- RENDERIZADO VISUAL EN LA PANTALLA PRINCIPAL ---
+    # Mostramos las novedades SOLO si no se ha seleccionado un tema específico para estudiar
+    if not tema_seleccionado or tema_seleccionado == lista_temas[0]: # Ajusta la condición según cómo inicie tu selectbox
+        st.markdown('<div class="tema-titulo">✨ Añadidos Recientemente</div>', unsafe_allow_html=True)
+        
+        # Creamos columnas para ponerlos como tarjetas una al lado de la otra
+        cols = st.columns(len(ultimos_temas))
+        
+        for i, tema_reciente in enumerate(ultimos_temas):
+            with cols[i]:
+                # Puedes agregar esta clase CSS en tu bloque de estilos inicial
+                st.markdown(f"""
+                <div style="background-color: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 10px; border-top: 4px solid #10B981; text-align: center; height: 100%; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <p style="color: #10B981; font-size: 12px; font-weight: bold; margin: 0;">NUEVO</p>
+                    <h4 style="color: #334155; margin-top: 5px;">{tema_reciente}</h4>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.write("---")
 
+
+    
     # =====================================================================
     # 3. RENDERIZADO DEL ESTUDIO
     # =====================================================================
