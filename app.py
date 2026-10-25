@@ -174,147 +174,147 @@ if df is not None:
                     # Botón de Streamlit que gatilla el cambio de tema
                     st.button("📖 Ver estudio", key=f"btn_{i}", on_click=cambiar_tema, args=(tema_reciente,), use_container_width=True)
 
-          else:
+    else:
             # Si el usuario eligió un tema (ya sea en el selectbox o dando clic a una tarjeta), 
             # se muestra el estudio normal.
             # ... (Aquí va todo tu código que renderiza los pasajes bíblicos, el markmap, pdf, etc.) ...
 
     
-    # =====================================================================
-    # 3. RENDERIZADO DEL ESTUDIO
-    # =====================================================================
-    if tema_seleccionado:
-        # Recuperamos todos los pasajes del tema seleccionado (filtrando por la llave ID_REF / ID_RI)
-        col_id = 'ID_REF' if 'ID_REF' in df.columns else 'ID_RI'
-        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=[col_id])
-        
-        st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
-        st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
-        
-       
         # =====================================================================
-        # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
+        # 3. RENDERIZADO DEL ESTUDIO
         # =====================================================================
-        for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
-            subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
-            st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
+        if tema_seleccionado:
+            # Recuperamos todos los pasajes del tema seleccionado (filtrando por la llave ID_REF / ID_RI)
+            col_id = 'ID_REF' if 'ID_REF' in df.columns else 'ID_RI'
+            resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=[col_id])
             
-            # Aseguramos limpiar espacios en blanco extras de toda la columna 'Ideas' para evitar duplicados visuales
-            grupo_subtema['Ideas'] = grupo_subtema['Ideas'].astype(str).str.strip()
+            st.markdown(f'<div class="tema-titulo">ESTUDIO: {tema_seleccionado.upper()}</div>', unsafe_allow_html=True)
+            st.markdown(f"**Total de pasajes en este estudio:** {len(resultado)}")
             
-            # Separar versos que tienen una idea asociada de los que no (filtramos los "nan" o vacíos)
-            con_idea = grupo_subtema[(grupo_subtema['Ideas'].notna()) & (grupo_subtema['Ideas'] != "") & (grupo_subtema['Ideas'] != "nan")]
-            sin_idea = grupo_subtema[(grupo_subtema['Ideas'].isna()) | (grupo_subtema['Ideas'] == "") | (grupo_subtema['Ideas'] == "nan")]
-            
-            # -----------------------------------------------------------------
-            # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
-            # -----------------------------------------------------------------
-            idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
-            
-            for _, fila in con_idea.iterrows():
-                idea_fila = fila['Ideas'] # Ya viene limpia de la línea anterior
+           
+            # =====================================================================
+            # RENDERIZADO EN CASCADA CON AUTOAGRUPAMIENTO DE SUBTEMAS E IDEAS (CORREGIDO)
+            # =====================================================================
+            for subtema, grupo_subtema in resultado.groupby('Subtema', sort=False):
+                subtema_str = str(subtema).strip() if pd.notna(subtema) else "ESTUDIO GENERAL"
+                st.markdown(f'<div class="subtema-titulo">🔹 {subtema_str.upper()}</div>', unsafe_allow_html=True)
                 
-                # EFECTÚA EL AUTOAGRUPAMIENTO: Compara de forma estricta textos limpios
-                if idea_fila != idea_actual:
-                    idea_actual = idea_fila
-                    st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
+                # Aseguramos limpiar espacios en blanco extras de toda la columna 'Ideas' para evitar duplicados visuales
+                grupo_subtema['Ideas'] = grupo_subtema['Ideas'].astype(str).str.strip()
                 
-                cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                texto_verso = fila['Texto_Verso']
+                # Separar versos que tienen una idea asociada de los que no (filtramos los "nan" o vacíos)
+                con_idea = grupo_subtema[(grupo_subtema['Ideas'].notna()) & (grupo_subtema['Ideas'] != "") & (grupo_subtema['Ideas'] != "nan")]
+                sin_idea = grupo_subtema[(grupo_subtema['Ideas'].isna()) | (grupo_subtema['Ideas'] == "") | (grupo_subtema['Ideas'] == "nan")]
                 
-                # 1. Renderizado principal del versículo
-                st.markdown(f"""
-                    <div class="verso-contenedor">
-                        <span class="cita">📖 {cita}</span> — {texto_verso}
-                    </div>
-                """, unsafe_allow_html=True)
+                # -----------------------------------------------------------------
+                # BLOQUE 1: Versículos con ideas específicas (AUTOAGRUPADOS)
+                # -----------------------------------------------------------------
+                idea_actual = None  # Reiniciamos el control de la idea al cambiar de subtema
                 
-                # 2. Desplegable opcional de Notas personales
-                if 'Notas' in fila and pd.notna(fila['Notas']):
-                    nota_texto = str(fila['Notas']).strip()
-                    # Verificamos que no sea un string vacío o valores 'nan' / 'none'
-                    if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
-                        with st.expander("💡 Ver nota / explicación personal", expanded=False):
-                            st.info(nota_texto)
-                
-            # -----------------------------------------------------------------
-            # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
-            # -----------------------------------------------------------------
-            if not sin_idea.empty:
-                if not con_idea.empty:
-                    st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
-                
-                for _, fila in sin_idea.iterrows():
+                for _, fila in con_idea.iterrows():
+                    idea_fila = fila['Ideas'] # Ya viene limpia de la línea anterior
+                    
+                    # EFECTÚA EL AUTOAGRUPAMIENTO: Compara de forma estricta textos limpios
+                    if idea_fila != idea_actual:
+                        idea_actual = idea_fila
+                        st.markdown(f'<div class="idea-titulo">🔸 {idea_actual}</div>', unsafe_allow_html=True)
+                    
                     cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
-                    texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
-                # 1. Renderizado principal del versículo    
+                    texto_verso = fila['Texto_Verso']
+                    
+                    # 1. Renderizado principal del versículo
                     st.markdown(f"""
                         <div class="verso-contenedor">
                             <span class="cita">📖 {cita}</span> — {texto_verso}
                         </div>
                     """, unsafe_allow_html=True)
-                ## 2. Desplegable opcional de Notas
+                    
+                    # 2. Desplegable opcional de Notas personales
                     if 'Notas' in fila and pd.notna(fila['Notas']):
                         nota_texto = str(fila['Notas']).strip()
-                        # Filtramos valores vacíos o nulos
+                        # Verificamos que no sea un string vacío o valores 'nan' / 'none'
                         if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
                             with st.expander("💡 Ver nota / explicación personal", expanded=False):
-                                st.info(nota_texto)    
-if tema_seleccionado:
-    resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
+                                st.info(nota_texto)
+                    
+                # -----------------------------------------------------------------
+                # BLOQUE 2: Versículos adicionales del subtema (Soporte general)
+                # -----------------------------------------------------------------
+                if not sin_idea.empty:
+                    if not con_idea.empty:
+                        st.markdown('<div class="leyenda-adicional">[Versículos adicionales del subtema:]</div>', unsafe_allow_html=True)
+                    
+                    for _, fila in sin_idea.iterrows():
+                        cita = f"{fila['Libro']} {fila['Capítulo']}:{fila['Versículo']}"
+                        texto_verso = limpiar_texto_biblico(fila['Texto_Verso'])
+                    # 1. Renderizado principal del versículo    
+                        st.markdown(f"""
+                            <div class="verso-contenedor">
+                                <span class="cita">📖 {cita}</span> — {texto_verso}
+                            </div>
+                        """, unsafe_allow_html=True)
+                    ## 2. Desplegable opcional de Notas
+                        if 'Notas' in fila and pd.notna(fila['Notas']):
+                            nota_texto = str(fila['Notas']).strip()
+                            # Filtramos valores vacíos o nulos
+                            if nota_texto and nota_texto.lower() not in ["nan", "none", ""]:
+                                with st.expander("💡 Ver nota / explicación personal", expanded=False):
+                                    st.info(nota_texto)    
+    if tema_seleccionado:
+        resultado = df[df['Tema_Principal'] == tema_seleccionado].sort_values(by=['ID_REF'])
+        
+        # -----------------------------------------------------------------
+        # BOTONES DE DESCARGA (PDF Carta e HTML Móvil)
+        # -----------------------------------------------------------------
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Opción 1: PDF para Impresión
+            bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
+            st.download_button(
+                label="📄 PDF para Imprimir (Carta)",
+                data=bytes_pdf,
+                file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+            
+        with col2:
+            # Opción 2: HTML Responsivo para Móvil
+            bytes_html = crear_html_estudio(resultado, tema_seleccionado)
+            st.download_button(
+                label="📱 Versión Móvil (.html)",
+                data=bytes_html,
+                file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}_movil.html",
+                mime="text/html",
+                use_container_width=True
+            )
     
-    # -----------------------------------------------------------------
-    # BOTONES DE DESCARGA (PDF Carta e HTML Móvil)
-    # -----------------------------------------------------------------
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Opción 1: PDF para Impresión
-        bytes_pdf = crear_pdf_estudio(resultado, tema_seleccionado)
-        st.download_button(
-            label="📄 PDF para Imprimir (Carta)",
-            data=bytes_pdf,
-            file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
-        
-    with col2:
-        # Opción 2: HTML Responsivo para Móvil
-        bytes_html = crear_html_estudio(resultado, tema_seleccionado)
-        st.download_button(
-            label="📱 Versión Móvil (.html)",
-            data=bytes_html,
-            file_name=f"Estudio_{tema_seleccionado.replace(' ', '_')}_movil.html",
-            mime="text/html",
-            use_container_width=True
-        )
-
-    # -----------------------------------------------------------------
-    # SECCIÓN: EXPORTAR A NOTION
-    # -----------------------------------------------------------------
-    with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
-        texto_markdown = generar_markdown(resultado, tema_seleccionado)
-        
-        st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
-        st.code(texto_markdown, language="markdown")
-    # -----------------------------------------------------------------
-    # SECCIÓN: MARKMAP (MAPA MENTAL EXPORTABLE Y DESCARGABLE)
-    # -----------------------------------------------------------------
-    with st.expander("🧠 Mapa Mental del Estudio (Descarga e Integración)", expanded=False):
-        st.write("Genera un mapa mental jerárquico que inicia mostrando hasta las **Ideas (Nivel 3)** con ramas de múltiples colores.")
-        
-        texto_markmap = generar_markmap(resultado, tema_seleccionado)
-        html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
-        nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
-        
-        # Botón de descarga directa del HTML interactivo
-        st.download_button(
-            label="🌐 Descargar Mapa Mental Interactivo (.html)",
-            data=html_mapa,
-            file_name=nombre_archivo_mapa,
-            mime="text/html"
-        )
-        
-        st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
-        st.code(texto_markmap, language="markdown")
+        # -----------------------------------------------------------------
+        # SECCIÓN: EXPORTAR A NOTION
+        # -----------------------------------------------------------------
+        with st.expander("📋 Copiar en formato Markdown (Para Notion)"):
+            texto_markdown = generar_markdown(resultado, tema_seleccionado)
+            
+            st.write("Haz clic en el botón de copiar (arriba a la derecha del cuadro)")
+            st.code(texto_markdown, language="markdown")
+        # -----------------------------------------------------------------
+        # SECCIÓN: MARKMAP (MAPA MENTAL EXPORTABLE Y DESCARGABLE)
+        # -----------------------------------------------------------------
+        with st.expander("🧠 Mapa Mental del Estudio (Descarga e Integración)", expanded=False):
+            st.write("Genera un mapa mental jerárquico que inicia mostrando hasta las **Ideas (Nivel 3)** con ramas de múltiples colores.")
+            
+            texto_markmap = generar_markmap(resultado, tema_seleccionado)
+            html_mapa = crear_html_markmap(texto_markmap, tema_seleccionado)
+            nombre_archivo_mapa = f"Mapa_Mental_{tema_seleccionado.replace(' ', '_')}.html"
+            
+            # Botón de descarga directa del HTML interactivo
+            st.download_button(
+                label="🌐 Descargar Mapa Mental Interactivo (.html)",
+                data=html_mapa,
+                file_name=nombre_archivo_mapa,
+                mime="text/html"
+            )
+            
+            st.caption("También puedes copiar el código Markdown para pegarlo en [markmap.js.org/repl](https://markmap.js.org/repl), Obsidian o Notion:")
+            st.code(texto_markmap, language="markdown")
